@@ -7,15 +7,39 @@ import (
 )
 
 func TestIsValid_Valid(t *testing.T) {
-	validIdentifiers := []Identifier{
+	tests := []struct {
+		name       string
+		identifier Identifier
+	}{
 		{
-			DoguNamespace: "official",
-			ChartName:     "dogu",
-			ChartVersion:  "1.0.0",
+			name: "simple",
+			identifier: Identifier{
+				DoguNamespace: "official",
+				ChartName:     "dogu",
+				ChartVersion:  "1.0.0",
+			},
+		},
+		{
+			name: "namespace with valid separators",
+			identifier: Identifier{
+				DoguNamespace: "namespace-with_separators",
+				ChartName:     "dogu",
+				ChartVersion:  "1.0.0",
+			},
+		},
+		{
+			name: "name with valid separators",
+			identifier: Identifier{
+				DoguNamespace: "official",
+				ChartName:     "dogu-with_separators",
+				ChartVersion:  "1.0.0",
+			},
 		},
 	}
-	for _, identifier := range validIdentifiers {
-		assert.True(t, identifier.IsValid())
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.True(t, test.identifier.IsValid())
+		})
 	}
 }
 func TestIsValid_Invalid(t *testing.T) {
@@ -48,6 +72,22 @@ func TestIsValid_Invalid(t *testing.T) {
 			},
 		},
 		{
+			name: "namespace with upper case",
+			identifier: &Identifier{
+				DoguNamespace: "NameSpace",
+				ChartName:     "dogu",
+				ChartVersion:  "1.0.0",
+			},
+		},
+		{
+			name: "namespace with space",
+			identifier: &Identifier{
+				DoguNamespace: "name space",
+				ChartName:     "dogu",
+				ChartVersion:  "1.0.0",
+			},
+		},
+		{
 			name: "missing dogu name",
 			identifier: &Identifier{
 				DoguNamespace: "namespace",
@@ -60,6 +100,22 @@ func TestIsValid_Invalid(t *testing.T) {
 			identifier: &Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "dogu/name",
+				ChartVersion:  "1.0.0",
+			},
+		},
+		{
+			name: "dogu name with upper case",
+			identifier: &Identifier{
+				DoguNamespace: "namespace",
+				ChartName:     "Dogu",
+				ChartVersion:  "1.0.0",
+			},
+		},
+		{
+			name: "dogu name with space",
+			identifier: &Identifier{
+				DoguNamespace: "namespace",
+				ChartName:     "dogu name",
 				ChartVersion:  "1.0.0",
 			},
 		},
