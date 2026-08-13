@@ -49,8 +49,7 @@ node('docker') {
             stage('Build') {
                 sh 'git config --global --add safe.directory /go/src/github.com/cloudogu/backend-dogu'
                 make 'clean'
-                make 'package'
-                archiveArtifacts 'target/**/*.tar.gz'
+                make 'compile'
             }
 
             stage('Unit Test') {
