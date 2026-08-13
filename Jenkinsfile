@@ -18,6 +18,7 @@ makefile = new Makefile(this)
 // Configuration of repository
 repositoryOwner = "cloudogu"
 repositoryName = "dogu-lib"
+projectName = repositoryName
 project = "github.com/${repositoryOwner}/${repositoryName}"
 
 // Configuration of branches
