@@ -40,12 +40,11 @@ node('docker') {
         new Docker(this)
                 .image("golang:${goVersion}")
                 .mountJenkinsUser()
-                .inside("--volume ${WORKSPACE}:/go/src/${project} -w /go/src/${project}")
-                        {
-                            stage("Review dog analysis") {
-                                stageStaticAnalysisReviewDog()
-                            }
-                        } {
+                .inside("--volume ${WORKSPACE}:/go/src/${project} -w /go/src/${project}") {
+
+            stage("Review dog analysis") {
+                stageStaticAnalysisReviewDog()
+            }
 
             stage('Build') {
                 sh 'git config --global --add safe.directory /go/src/github.com/cloudogu/backend-dogu'
@@ -58,11 +57,24 @@ node('docker') {
                 make 'unit-test'
                 junit allowEmptyResults: true, testResults: 'target/unit-tests/*-tests.xml'
             }
+            stage('Static Analysis') {
+                dir = sh(returnStdout: true, script: 'pwd')
+                sh "git config --global --add safe.directory ${dir}"
+                def commitSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: githubCredentialsId, usernameVariable: 'USERNAME', passwordVariable: 'REVIEWDOG_GITHUB_API_TOKEN']]) {
+                    withEnv(["CI_COMMIT=${commitSha}", "CI_REPO_OWNER=${repositoryOwner}", "CI_REPO_NAME=${repositoryName}"]) {
+                        make 'static-analysis'
+                    }
+                }
+                sh "git config --global --unset safe.directory ${dir}"
+            }
+
             stage('SonarQube') {
                 stageStaticAnalysisSonarQube()
             }
 
             stageAutomaticRelease()
+        }
     }
 }
 
