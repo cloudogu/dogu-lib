@@ -18,7 +18,6 @@ makefile = new Makefile(this)
 // Configuration of repository
 repositoryOwner = "cloudogu"
 repositoryName = "dogu-lib"
-projectName = repositoryName
 project = "github.com/${repositoryOwner}/${repositoryName}"
 
 // Configuration of branches
@@ -83,19 +82,19 @@ void stageStaticAnalysisSonarQube() {
 
         if (currentBranch == productionReleaseBranch) {
             echo "This branch has been detected as the production branch."
-            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${projectName} -Dsonar.branch.name=${env.BRANCH_NAME}"
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME}"
         } else if (currentBranch == developmentBranch) {
             echo "This branch has been detected as the development branch."
-            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${projectName} -Dsonar.branch.name=${env.BRANCH_NAME}"
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME}"
         } else if (env.CHANGE_TARGET) {
             echo "This branch has been detected as a pull request."
-            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${projectName} -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} -Dsonar.pullrequest.base=${developmentBranch}"
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} -Dsonar.pullrequest.base=${developmentBranch}"
         } else if (currentBranch.startsWith("feature/")) {
             echo "This branch has been detected as a feature branch."
-            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${projectName} -Dsonar.branch.name=${env.BRANCH_NAME}"
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME}"
         } else {
             echo "This branch has been detected as a miscellaneous branch."
-            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${projectName} -Dsonar.branch.name=${env.BRANCH_NAME} "
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.branch.name=${env.BRANCH_NAME} "
         }
     }
     timeout(time: 2, unit: 'MINUTES') { // Needed when there is no webhook for example
