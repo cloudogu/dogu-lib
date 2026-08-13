@@ -56,13 +56,12 @@ node('docker') {
                 make 'unit-test'
                 junit allowEmptyResults: true, testResults: 'target/unit-tests/*-tests.xml'
             }
-
-            stage('SonarQube') {
-                stageStaticAnalysisSonarQube()
-            }
-
-            stageAutomaticRelease()
         }
+        stage('SonarQube') {
+            stageStaticAnalysisSonarQube()
+        }
+
+        stageAutomaticRelease()
     }
 }
 
