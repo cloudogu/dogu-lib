@@ -7,6 +7,7 @@ MAKEFILES_VERSION=10.10.0
 
 GOTAG?=1.26.5
 GO_BUILD_FLAGS?=-mod=vendor -a ./...
+LINT_VERSION=v2.10.1
 
 include build/make/variables.mk
 include build/make/self-update.mk
