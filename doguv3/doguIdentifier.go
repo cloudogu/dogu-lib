@@ -23,9 +23,9 @@ func (n *Identifier) String() string {
 }
 
 // IsValid checks, whether the identifier is valid. A valid identifier must have
-//   - a non-empty DoguNamespace without any '/' character
-//   - a non-empty ChartName without any '/' character
-//   - a non-empty ChartVersion that matches the SemVer format
+//   - a non-empty DoguNamespace consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
+//   - a non-empty ChartName consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
+//   - a non-empty ChartVersion that matches the SemVer format (MAJOR[.MINOR[.PATCH[-PRERELEASE][+BUILD]]])
 func (n *Identifier) IsValid() bool {
 	return n != nil && isValidName(n.DoguNamespace) && isValidName(n.ChartName) && isValidVersion(n.ChartVersion)
 }

@@ -35,6 +35,30 @@ func TestIsValid_Valid(t *testing.T) {
 				ChartVersion:  "1.0.0",
 			},
 		},
+		{
+			name: "pre-release version",
+			identifier: Identifier{
+				DoguNamespace: "official",
+				ChartName:     "dogu",
+				ChartVersion:  "1.0.0-beta.2",
+			},
+		},
+		{
+			name: "version with build info",
+			identifier: Identifier{
+				DoguNamespace: "official",
+				ChartName:     "dogu",
+				ChartVersion:  "1.0.0+special",
+			},
+		},
+		{
+			name: "version without patch",
+			identifier: Identifier{
+				DoguNamespace: "official",
+				ChartName:     "dogu",
+				ChartVersion:  "1.4",
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
