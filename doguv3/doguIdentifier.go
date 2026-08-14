@@ -15,10 +15,7 @@ type Identifier struct {
 }
 
 // String returns the string presentation of this object. Like <doguNamespace>/<chartName>:<chartVersion>
-func (n *Identifier) String() string {
-	if n == nil {
-		return "nil"
-	}
+func (n Identifier) String() string {
 	return fmt.Sprintf("%s/%s:%s", n.DoguNamespace, n.ChartName, n.ChartVersion)
 }
 
@@ -26,8 +23,8 @@ func (n *Identifier) String() string {
 //   - a non-empty DoguNamespace consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
 //   - a non-empty ChartName consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
 //   - a non-empty ChartVersion that matches the SemVer format (MAJOR[.MINOR[.PATCH[-PRERELEASE][+BUILD]]])
-func (n *Identifier) IsValid() bool {
-	return n != nil && isValidName(n.DoguNamespace) && isValidName(n.ChartName) && isValidVersion(n.ChartVersion)
+func (n Identifier) IsValid() bool {
+	return isValidName(n.DoguNamespace) && isValidName(n.ChartName) && isValidVersion(n.ChartVersion)
 }
 
 const nameRegex = "^[a-z0-9_\\-]+$"

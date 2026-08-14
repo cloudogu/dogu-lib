@@ -69,19 +69,15 @@ func TestIsValid_Valid(t *testing.T) {
 func TestIsValid_Invalid(t *testing.T) {
 	tests := []struct {
 		name       string
-		identifier *Identifier
+		identifier Identifier
 	}{
 		{
-			name:       "nil identifier",
-			identifier: nil,
-		},
-		{
 			name:       "empty identifier",
-			identifier: &Identifier{},
+			identifier: Identifier{},
 		},
 		{
 			name: "missing namespace",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "",
 				ChartName:     "dogu",
 				ChartVersion:  "1.0.0",
@@ -89,7 +85,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "namespace with slash",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "name/space",
 				ChartName:     "dogu",
 				ChartVersion:  "1.0.0",
@@ -97,7 +93,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "namespace with upper case",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "NameSpace",
 				ChartName:     "dogu",
 				ChartVersion:  "1.0.0",
@@ -105,7 +101,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "namespace with space",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "name space",
 				ChartName:     "dogu",
 				ChartVersion:  "1.0.0",
@@ -113,7 +109,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "missing dogu name",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "",
 				ChartVersion:  "1.0.0",
@@ -121,7 +117,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "dogu name with slash",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "dogu/name",
 				ChartVersion:  "1.0.0",
@@ -129,7 +125,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "dogu name with upper case",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "Dogu",
 				ChartVersion:  "1.0.0",
@@ -137,7 +133,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "dogu name with space",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "dogu name",
 				ChartVersion:  "1.0.0",
@@ -145,7 +141,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "missing version",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "dogu",
 				ChartVersion:  "",
@@ -153,7 +149,7 @@ func TestIsValid_Invalid(t *testing.T) {
 		},
 		{
 			name: "invalid version",
-			identifier: &Identifier{
+			identifier: Identifier{
 				DoguNamespace: "namespace",
 				ChartName:     "dogu",
 				ChartVersion:  "1.2.3.4",
@@ -179,9 +175,4 @@ func TestString(t *testing.T) {
 func TestString_empty(t *testing.T) {
 	var identifier Identifier
 	assert.Equal(t, "/:", identifier.String())
-}
-
-func TestString_nil(t *testing.T) {
-	var identifier *Identifier
-	assert.Equal(t, "nil", identifier.String())
 }
