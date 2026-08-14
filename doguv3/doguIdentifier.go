@@ -14,7 +14,7 @@ type Identifier struct {
 	ChartVersion  string
 }
 
-// String return the string presentation of this object. Like <doguNamespace>/<chartName>:<chartVersion>
+// String returns the string presentation of this object. Like <doguNamespace>/<chartName>:<chartVersion>
 func (n *Identifier) String() string {
 	if n == nil {
 		return "nil"

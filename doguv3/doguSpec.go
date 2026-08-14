@@ -6,18 +6,18 @@ import (
 
 // ApplicationVersion combines a name and version of an application bundled inside a dogu.
 type ApplicationVersion struct {
-	// Name the name of the application. As this name is taken from the name of an annotation of the dogu's Helm chart,
+	// Name of the application. As this name is taken from the name of an annotation of the dogu's Helm chart,
 	// it must be valid annotation name with no more than 51 characters.
 	Name string `json:"Name"`
 
-	// Version the version number of that application (the format depends on the application)
+	// Version is the version number of that application (the format depends on the application)
 	Version string `json:"Version"`
 }
 
 // ServiceAccountRequest describes a request for a service account a dogu wants to use
 // A dogu may request any number of service accounts or none at all.
 type ServiceAccountRequest struct {
-	// Type the type of the requested service account (e.g. "nexus" or "scm")
+	// Type is the type (unique name) of the requested service account (e.g. "nexus" or "scm")
 	Type string `json:"Type"`
 
 	// Optional states whether the service account is optional or mandatory
@@ -28,7 +28,7 @@ type ServiceAccountRequest struct {
 // In its core it is just a name that can be referenced by other dogus to request a service account of that type.
 // A dogu may provide any number of service account types or none at all.
 type ServiceAccountProducer struct {
-	// Type the type of the provided service account (e.g. "nexus" or "scm")
+	// Type is the type (unique name) of the provided service account (e.g. "nexus" or "scm")
 	Type string `json:"Type"`
 }
 
@@ -36,14 +36,14 @@ type ServiceAccountProducer struct {
 // It can provide service accounts for other dogus, and it can request service accounts from other dogus (where each
 // request might be optional or strictly required).
 type ServiceAccounts struct {
-	// Requests all service accounts requested by this dogu (optional or mandatory)
+	// Requests lists all service accounts requested by this dogu (optional or mandatory)
 	Requests []ServiceAccountRequest `json:"Requests"`
 
-	// Producers all service accounts provided by this dogu
+	// Producers lists all service accounts provided by this dogu
 	Producers []ServiceAccountProducer `json:"Producers"`
 }
 
-// ExposedPort a network port a dogu wants to expose. As each port can only exposed by one dogu,
+// ExposedPort struct describes a network port a dogu wants to expose. As each port can only exposed by one dogu,
 // there might be conflicts, which have to be resolved.
 type ExposedPort struct {
 	// Protocol the protocol of the exposed port ("tcp" or "udp")
@@ -54,13 +54,13 @@ type ExposedPort struct {
 }
 
 type Upgrade struct {
-	// From specification of versions this dogu can upgrade from (e.g. ">=44.0.0 <45.0.0")
+	// From specifies the versions this dogu can upgrade from (e.g. ">=44.0.0 <45.0.0")
 	From string `json:"From"`
 
-	// To the version number this dogu can upgrade to
+	// To specifies the version number this dogu can upgrade to
 	To string `json:"To"`
 
-	// IsMigration whether this upgrade process requires extra (automated) migration steps
+	// IsMigration specifies whether this upgrade process requires extra (automated) migration steps
 	IsMigration bool `json:"IsMigration"`
 }
 
@@ -90,16 +90,16 @@ type Dogu struct {
 	//
 	Name string `json:"Name"`
 
-	// Version the version of the dogu (which is the version of the dogu's Helm chart
+	// Version is the version of the dogu (which is the version of the dogu's Helm chart
 	// and may differ from the application version). The version must follow the semantic versioning format.
 	Version string `json:"Version"`
 
-	// AppVersion the version of the dogu's (main) application, which may differ from the dogu's Version. It is defined
-	// by the "appVersion" field of the dogu's Helm, chart. As the version is defined by the application's developer,
-	// its format is not formally restricted.
+	// AppVersion is the version of the dogu's (main) application, which may differ from the dogu's Version.
+	// It is defined by the "appVersion" field of the dogu's Helm, chart. As the version is defined by the
+	// application's developer, its format is not formally restricted.
 	AppVersion string `json:"AppVersion"`
 
-	// PublishedAt the timestamp, when this dogu version has been published.
+	// PublishedAt is the timestamp, when this dogu version has been published.
 	// The value is maintained by the dogu registry.
 	// Example:
 	//   - 2026-05-16T14:57:04.927Z
@@ -115,12 +115,12 @@ type Dogu struct {
 	//  - SCM-Manager
 	DisplayName string `json:"DisplayName"`
 
-	// Description a (mandatory) short description for the dogu.
+	// Description is a (mandatory) short description for the dogu.
 	// The description is recommended to consist of a readable sentence which explains shortly the dogu's main topic.
 	Description string `json:"Description"`
 
-	// Categories the categories under which the dogu should be listed in the Warp menu. Usually this is just one, but
-	// dogus are free to declare entries for different categories if it fits their applications.
+	// Categories lists the categories under which the dogu should be listed in the Warp menu. Usually this is just one,
+	// but dogus are free to declare entries for different categories if it fits their applications.
 	// Commonly used categories are "Development Apps", "Administration Apps", or "Documentation", but
 	// other categories can be declared as needed.
 	Categories []string `json:"Categories"`
@@ -138,23 +138,23 @@ type Dogu struct {
 	// Example: "https://cloudogu.com/ecosystem"
 	URL string `json:"URL"`
 
-	// Chart the OCI reference of the dogu's Helm chart. That Helm chart defines, how the dogu is deployed and
+	// Chart is the OCI reference of the dogu's Helm chart. That Helm chart defines, how the dogu is deployed and
 	// integrated into the Cloudogu EcoSystem.
 	// Example: "oci://registry.cloudogu.com/official/dogu/v3/charts/redmine"
 	Chart string `json:"Chart"`
 
-	// Applications a list of one or more application(s) with respective version number bundled by this dogu.
+	// Applications lists one or more application(s) with respective version number bundled by this dogu.
 	// Besides the main applications this may contain any helpers like a bundled database.
 	Applications []ApplicationVersion `json:"Applications"`
 
-	// Images a list of all container images used by this dogu. Each image reference must be fully qualified with
+	// Images lists all container images used by this dogu. Each image reference must be fully qualified with
 	// registry and version information. This information is extracted from the Helm chart's chart-patch-tpl.yaml.
 	// Examples:
 	//   - "registry.cloudogu.com/official/dogu/v3/images/redmine:6.1.2-45.7.0",
 	//   - "docker.io/postgres:16.8"
 	Images []string `json:"Images"`
 
-	// DoguApis a list of dogu related APIs and their versions, which are used by this dogu. This information is
+	// DoguApis lists dogu related APIs and their versions, which are used by this dogu. This information is
 	// gathered from the resources of the dogu's Helm chart.
 	// Each API is listed in the format <kind>.<group>/<version>.
 	// Examples:
@@ -162,23 +162,23 @@ type Dogu struct {
 	//   - "Exposition.k8s.cloudogu.com/v1"
 	DoguApis []string `json:"DoguApis"`
 
-	// ServiceAccounts a list of all required or provided service accounts for this dogu. This information is collected
+	// ServiceAccounts lists all required or provided service accounts for this dogu. This information is collected
 	// from the ServiceAccountRequest.k8s.cloudogu.com and ServiceAccountProvider.k8s.cloudogu.com resources contained
 	// in the dogu's Helm chart.
 	ServiceAccounts ServiceAccounts `json:"ServiceAccounts"`
 
-	// ExposedPorts is a list of [ExposedPort], describing additional ports, this dogu wants to expose. This information
+	// ExposedPorts lists additional ports, this dogu wants to expose. This information
 	// is collected from any Exposition.k8s.cloudogu.com resources contained in the dogu's Helm chart.
 	// Dogus can expose ports if the dogu provides services to a consumer
 	// (f.i. if it wants to provide an API for a CLI tool).
 	ExposedPorts []ExposedPort `json:"ExposedPorts"`
 
-	// ConfigurableKeys a list of common configuration keys supported by this dogu. The list is taken from the
+	// ConfigurableKeys lists common configuration keys supported by this dogu. The list is taken from the
 	// dogu-values-metadata.yaml of the dogu's Helm chart.
 	// Example: "logging/root"
 	ConfigurableKeys []string `json:"ConfigurableKeys"`
 
-	// Upgrades a list of possible upgrade paths this dogu supports. This information is taken from the upgrade-api.yaml
+	// Upgrades lists possible upgrade paths this dogu supports. This information is taken from the upgrade-api.yaml
 	// of the dogu's Helm chart.
 	Upgrades []Upgrade `json:"Upgrades"`
 }
