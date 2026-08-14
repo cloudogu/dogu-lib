@@ -123,7 +123,7 @@ type Dogu struct {
 	// dogus are free to declare entries for different categories if it fits their applications.
 	// Commonly used categories are "Development Apps", "Administration Apps", or "Documentation", but
 	// other categories can be declared as needed.
-	Categories string `json:"Categories"`
+	Categories []string `json:"Categories"`
 
 	// Tags contains a list of one-word-tags which are in connection with the dogu. This field is optional.
 	Tags []string `json:"Tags"`
