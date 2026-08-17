@@ -15,48 +15,48 @@ func TestIsValid_Valid(t *testing.T) {
 			name: "simple",
 			identifier: Identifier{
 				DoguNamespace: "official",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "namespace with valid separators",
 			identifier: Identifier{
 				DoguNamespace: "namespace-with_separators",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "name with valid separators",
 			identifier: Identifier{
 				DoguNamespace: "official",
-				ChartName:     "dogu-with_separators",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu-with_separators",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "pre-release version",
 			identifier: Identifier{
 				DoguNamespace: "official",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0-beta.2",
+				Name:          "dogu",
+				Version:       "1.0.0-beta.2",
 			},
 		},
 		{
 			name: "version with build info",
 			identifier: Identifier{
 				DoguNamespace: "official",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0+special",
+				Name:          "dogu",
+				Version:       "1.0.0+special",
 			},
 		},
 		{
 			name: "version without patch",
 			identifier: Identifier{
 				DoguNamespace: "official",
-				ChartName:     "dogu",
-				ChartVersion:  "1.4",
+				Name:          "dogu",
+				Version:       "1.4",
 			},
 		},
 	}
@@ -79,80 +79,80 @@ func TestIsValid_Invalid(t *testing.T) {
 			name: "missing namespace",
 			identifier: Identifier{
 				DoguNamespace: "",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "namespace with slash",
 			identifier: Identifier{
 				DoguNamespace: "name/space",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "namespace with upper case",
 			identifier: Identifier{
 				DoguNamespace: "NameSpace",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "namespace with space",
 			identifier: Identifier{
 				DoguNamespace: "name space",
-				ChartName:     "dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "missing dogu name",
 			identifier: Identifier{
 				DoguNamespace: "namespace",
-				ChartName:     "",
-				ChartVersion:  "1.0.0",
+				Name:          "",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "dogu name with slash",
 			identifier: Identifier{
 				DoguNamespace: "namespace",
-				ChartName:     "dogu/name",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu/name",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "dogu name with upper case",
 			identifier: Identifier{
 				DoguNamespace: "namespace",
-				ChartName:     "Dogu",
-				ChartVersion:  "1.0.0",
+				Name:          "Dogu",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "dogu name with space",
 			identifier: Identifier{
 				DoguNamespace: "namespace",
-				ChartName:     "dogu name",
-				ChartVersion:  "1.0.0",
+				Name:          "dogu name",
+				Version:       "1.0.0",
 			},
 		},
 		{
 			name: "missing version",
 			identifier: Identifier{
 				DoguNamespace: "namespace",
-				ChartName:     "dogu",
-				ChartVersion:  "",
+				Name:          "dogu",
+				Version:       "",
 			},
 		},
 		{
 			name: "invalid version",
 			identifier: Identifier{
 				DoguNamespace: "namespace",
-				ChartName:     "dogu",
-				ChartVersion:  "1.2.3.4",
+				Name:          "dogu",
+				Version:       "1.2.3.4",
 			},
 		},
 	}
@@ -166,8 +166,8 @@ func TestIsValid_Invalid(t *testing.T) {
 func TestString(t *testing.T) {
 	identifier := Identifier{
 		DoguNamespace: "namespace",
-		ChartName:     "dogu",
-		ChartVersion:  "1.0.2",
+		Name:          "dogu",
+		Version:       "1.0.2",
 	}
 	assert.Equal(t, "namespace/dogu:1.0.2", identifier.String())
 }
