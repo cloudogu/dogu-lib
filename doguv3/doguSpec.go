@@ -65,10 +65,8 @@ type Upgrade struct {
 }
 
 type Dogu struct {
-	// Name contains the dogu's fully qualified name which consists of the dogu namespace and the dogu simple name,
-	// delimited by a single forward slash "/".
-	//
-	// The namespace is defined by the location, where the dogu's chart is provided. It allows to regulate access
+
+	// The DoguNamespace defines the location where the dogu's chart is provided. It allows to regulate access
 	// to dogus in that namespace. There are three reserved dogu namespaces: The namespaces `official` and `k8s`
 	// are open to all users without any further costs. Other namespaces (like `premium`) may be restricted to special
 	// subscription users, only. The namespace usually consists of
@@ -76,22 +74,30 @@ type Dogu struct {
 	//   - special characters underscore "_", minus "-"
 	//   - digits 0-9
 	//
-	// The dogu simple name is defined by the dogus's chart's "name" attribute and is used to identify the dogu.
-	// The name must be a DNS compatible identifier and usually consists of
+	// Examples:
+	//   - official
+	//   - premium
+	//   - foo-1
+	//
+
+	DoguNamespace string `json:"DoguNamespace"`
+
+	// The Name is used to identify the dogu.
+	// The Name must be a DNS compatible identifier and usually consists of
 	//   - lower case Latin characters
 	//   - special characters underscore "_", minus "-"
 	//   - digits 0-9
 	// It also should start with a letter (as recommended by Helm).
 	//
 	// Examples:
-	//   - official/redmine
-	//   - premium/confluence
-	//   - foo-1/bar-2
+	//   - redmine
+	//   - confluence
+	//   - bar-2
 	//
 	Name string `json:"Name"`
 
 	// Version is the version of the dogu (which is the version of the dogu's Helm chart
-	// and may differ from the application version). The version must follow the semantic versioning format.
+	// and may differ from the application version). The Version must follow the semantic versioning format.
 	Version string `json:"Version"`
 
 	// AppVersion is the version of the dogu's (main) application, which may differ from the dogu's Version.

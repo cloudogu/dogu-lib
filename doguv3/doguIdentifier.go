@@ -10,21 +10,21 @@ import (
 // Identifier identifies a Dogu via namespace, name and version
 type Identifier struct {
 	DoguNamespace string
-	ChartName     string
-	ChartVersion  string
+	Name          string
+	Version       string
 }
 
 // String returns the string presentation of this object. Like <doguNamespace>/<chartName>:<chartVersion>
 func (n Identifier) String() string {
-	return fmt.Sprintf("%s/%s:%s", n.DoguNamespace, n.ChartName, n.ChartVersion)
+	return fmt.Sprintf("%s/%s:%s", n.DoguNamespace, n.Name, n.Version)
 }
 
 // IsValid checks, whether the identifier is valid. A valid identifier must have
 //   - a non-empty DoguNamespace consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
-//   - a non-empty ChartName consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
-//   - a non-empty ChartVersion that matches the SemVer format (MAJOR[.MINOR[.PATCH[-PRERELEASE][+BUILD]]])
+//   - a non-empty Name consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
+//   - a non-empty Version that matches the SemVer format (MAJOR[.MINOR[.PATCH[-PRERELEASE][+BUILD]]])
 func (n Identifier) IsValid() bool {
-	return isValidName(n.DoguNamespace) && isValidName(n.ChartName) && isValidVersion(n.ChartVersion)
+	return isValidName(n.DoguNamespace) && isValidName(n.Name) && isValidVersion(n.Version)
 }
 
 const nameRegex = "^[a-z0-9_\\-]+$"
