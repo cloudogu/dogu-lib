@@ -79,7 +79,6 @@ type Dogu struct {
 	//   - premium
 	//   - foo-1
 	//
-
 	DoguNamespace string `json:"DoguNamespace"`
 
 	// The Name is used to identify the dogu.
