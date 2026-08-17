@@ -7,6 +7,9 @@ based on the date of the release.
 
 ## [Unreleased]
 
+### Added
+- [#1] Split name into doguNamespace and chartName
+
 ## [v0.1.0] - 2026-08-14
 ### Added
 - [#1] Initial Version with dogu v3 specification
