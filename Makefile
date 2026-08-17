@@ -1,6 +1,6 @@
 # Set these to the desired values
 PROJECT_NAME=dogu-lib
-VERSION=0.1.0
+VERSION=1.0.0
 ARTIFACT_ID=dogu_lib
 
 MAKEFILES_VERSION=10.10.0
