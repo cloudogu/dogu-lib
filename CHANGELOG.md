@@ -7,6 +7,7 @@ based on the date of the release.
 
 ## [Unreleased]
 
+## [v1.0.0] - 2026-08-17
 ### Added
 - [#1] Split name into doguNamespace and chartName
 
