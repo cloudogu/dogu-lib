@@ -7,61 +7,67 @@ import (
 	"strings"
 )
 
-// ParseVersion parses a raw version string and returns a Version struct
-func ParseVersion(raw string) (Version, error) {
-	version := Version{Raw: raw}
+// versionParser holds the temporary state during parsing to avoid deep nesting and repetitive error handling.
+type versionParser struct {
+	raw string
+	err error
+}
 
+func ParseVersion(raw string) (Version, error) {
+	v := Version{Raw: raw}
+	p := &versionParser{raw: removeOperatorFromRawIfPresent(raw)}
+
+	// 1. Split into semver and extra components
+	mainParts := strings.Split(p.raw, "-")
+	if len(mainParts) > 2 {
+		return v, fmt.Errorf("found more than one hyphen in version %s", p.raw)
+	}
+
+	// 2. Parse the primary semver components (Major.Minor.Patch.Nano)
+	semverPlusNano := strings.Split(mainParts[0], ".")
+	v.Major = p.parseInt(semverPlusNano, 0, "major")
+	v.Minor = p.parseInt(semverPlusNano, 1, "minor")
+	v.Patch = p.parseInt(semverPlusNano, 2, "patch")
+	v.Nano = p.parseInt(semverPlusNano, 3, "nano")
+
+	// 3. Parse the extra component if it exists
+	if len(mainParts) > 1 {
+		v.Extra = p.parseInt(mainParts, 1, "extra")
+	}
+
+	// 4. Return the first error encountered, if any
+	if p.err != nil {
+		return Version{Raw: raw}, p.err
+	}
+
+	return v, nil
+}
+
+// parseInt safely extracts a numeric component by index and tracks parsing errors.
+func (p *versionParser) parseInt(parts []string, index int, name string) int {
+	// If a previous step failed or the index doesn't exist, skip and do nothing
+	if p.err != nil || index >= len(parts) {
+		return 0
+	}
+
+	val, err := strconv.Atoi(parts[index])
+	if err != nil {
+		p.err = fmt.Errorf("failed to parse %s version %s: %w", name, parts[index], err)
+		return 0
+	}
+
+	return val
+}
+
+// ParseVersion parses a raw version string and returns a Version struct
+
+func removeOperatorFromRawIfPresent(raw string) string {
 	r, _ := regexp.Compile(operatorRegex)
 	if r.MatchString(raw) {
 		idx := r.FindStringIndex(raw)
 		raw = raw[idx[1]:] //remove operator from raw
 	}
-
-	mainParts := strings.Split(raw, "-")
-	if len(mainParts) > 2 {
-		return version, fmt.Errorf("found more than one hyphen in version %s", raw)
-	}
-
-	semverPlusNano := strings.Split(mainParts[0], ".")
-	major, err := strconv.Atoi(semverPlusNano[0])
-	if err != nil {
-		return version, fmt.Errorf("failed to parse major version %s: %w", semverPlusNano[0], err)
-	}
-	version.Major = major
-
-	if len(semverPlusNano) > 1 {
-		minor, err := strconv.Atoi(semverPlusNano[1])
-		if err != nil {
-			return version, fmt.Errorf("failed to parse minor version %s: %w", semverPlusNano[1], err)
-		}
-		version.Minor = minor
-
-		if len(semverPlusNano) > 2 {
-			patch, err := strconv.Atoi(semverPlusNano[2])
-			if err != nil {
-				return version, fmt.Errorf("failed to parse patch version %s: %w", semverPlusNano[2], err)
-			}
-			version.Patch = patch
-
-			if len(semverPlusNano) > 3 {
-				nano, err := strconv.Atoi(semverPlusNano[3])
-				if err != nil {
-					return version, fmt.Errorf("failed to parse nano version %s: %w", semverPlusNano[3], err)
-				}
-				version.Nano = nano
-			}
-		}
-	}
-
-	if len(mainParts) > 1 {
-		extra, err := strconv.Atoi(mainParts[1])
-		if err != nil {
-			return version, fmt.Errorf("failed to parse extra version %s: %w", mainParts[1], err)
-		}
-		version.Extra = extra
-	}
-
-	return version, nil
+	return raw
 }
 
 // Version struct can be used to extract single parts of a version number or to compare version with each other.
