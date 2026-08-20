@@ -90,20 +90,6 @@ const (
 	newer comparisonResult = 1
 )
 
-func (comp comparisonResult) String() string {
-	if comp < older || comp > newer {
-		return "Unknown"
-	}
-
-	names := []string{
-		"older",
-		"equal",
-		"newer",
-	}
-
-	return names[comp]
-}
-
 // IsNewerThan returns true if this version is newer than the given version parameter
 func (v *Version) IsNewerThan(o Version) bool {
 	return v.compare(o) == newer
