@@ -1,4 +1,4 @@
-package repository
+package client
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/cloudogu/dogu-lib/doguv3"
 )
 
-type RemoteDoguDescriptorRepository interface {
+type DccClient interface {
 	// GetLatest returns the latest dogu descriptor for a dogu from the remote server.
 	// Generic error if there is any issue
 	GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error)

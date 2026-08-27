@@ -1,4 +1,4 @@
-package repository
+package client
 
 import (
 	"context"
@@ -8,52 +8,49 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/cloudogu/dogu-lib/doguv3"
-	"github.com/cloudogu/dogu-lib/doguv3/client/clienterrors"
-	"github.com/cloudogu/dogu-lib/doguv3/client/config"
-
 	neturl "net/url"
 
-	"github.com/op/go-logging"
+	"github.com/cloudogu/dogu-lib/doguv3"
+	"github.com/cloudogu/dogu-lib/doguv3/dcc/clienterrors"
+	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
 )
 
-// GetLogger is an alias function to provide a different logger for the core.
-
-var Log = logging.MustGetLogger("repository")
-
-func NewRemoteDoguDescriptorRepository(remoteConfig *config.Remote, credentials *config.Credentials) (RemoteDoguDescriptorRepository, error) {
-	return newHTTPRemote(remoteConfig, credentials)
+func NewHttpDccClient(remoteConfig *config.Remote, credentials *config.Credentials) (DccClient, error) {
+	return newHttpDccClient(remoteConfig, credentials)
 }
 
-// httpRemote is able to handle request to a remote registry.
-type httpRemote struct {
+// httpDccClient is able to handle request to a remote DCC registry.
+type httpDccClient struct {
 	endpoint            string
 	credentials         *config.Credentials
 	client              *http.Client
 	remoteConfiguration *config.Remote
 }
 
-func newHTTPRemote(remoteConfig *config.Remote, credentials *config.Credentials) (*httpRemote, error) {
+func newHttpDccClient(remoteConfig *config.Remote, credentials *config.Credentials) (*httpDccClient, error) {
 
-	client, err := CreateHTTPClient(remoteConfig)
+	client, err := createHTTPClient(remoteConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return &httpRemote{
-		endpoint:            remoteConfig.Endpoint,
+	endpoint := strings.TrimSuffix(remoteConfig.Endpoint, "/")
+
+	return &httpDccClient{
+		endpoint:            endpoint,
 		credentials:         credentials,
 		client:              client,
 		remoteConfiguration: remoteConfig,
 	}, nil
 }
 
-// CreateHTTPClient creates a httpClient for the given remote settings.
-func CreateHTTPClient(config *config.Remote) (*http.Client, error) {
+// createHTTPClient creates a httpClient for the given remote settings.
+func createHTTPClient(config *config.Remote) (*http.Client, error) {
 	timeout := 10 * time.Second
 	if config.Timeout != 0 {
 		timeout = time.Duration(config.Timeout) * time.Second
@@ -76,7 +73,7 @@ func createProxyHTTPTransport(config *config.Remote) (*http.Transport, error) {
 
 	if config.ProxySettings.Enabled {
 		proxyURLString := config.ProxySettings.CreateURL()
-		Log.Infof("configure http client to use proxy %s", proxyURLString)
+		slog.Info("configure http client to use proxy", "proxyURL", proxyURLString)
 
 		proxyURL, err := neturl.Parse(proxyURLString)
 		if err != nil {
@@ -106,7 +103,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 }
 
 // GetLatest returns the detail about the latest dogu from the remote server by name.
-func (r *httpRemote) GetLatest(_ context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
+func (r *httpDccClient) GetLatest(_ context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
 	if !doguv3.IsValidName(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -120,7 +117,7 @@ func (r *httpRemote) GetLatest(_ context.Context, doguNamespace string, name str
 }
 
 // Get returns a version specific detail about the dogu.
-func (r *httpRemote) Get(_ context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
+func (r *httpDccClient) Get(_ context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
 	if !doguIdentifier.IsValid() {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
 	}
@@ -129,7 +126,7 @@ func (r *httpRemote) Get(_ context.Context, doguIdentifier doguv3.Identifier) (*
 }
 
 // GetVersions returns a version specific dogu descriptor.
-func (r *httpRemote) GetVersions(_ context.Context, doguNamespace string, name string) ([]string, error) {
+func (r *httpDccClient) GetVersions(_ context.Context, doguNamespace string, name string) ([]string, error) {
 	if !doguv3.IsValidName(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -142,7 +139,7 @@ func (r *httpRemote) GetVersions(_ context.Context, doguNamespace string, name s
 	requestURL := r.endpoint + "/" + doguNamespace + "/" + name + "/" + "_versions"
 	body, err := r.request(requestURL)
 	if err != nil {
-		Log.Errorf("failed to request dogu identifiers from remote: %w", err)
+		slog.Error("failed to request dogu identifiers from remote", "error", err)
 		return nil, err
 	}
 
@@ -157,11 +154,11 @@ func (r *httpRemote) GetVersions(_ context.Context, doguNamespace string, name s
 }
 
 // GetAll returns latest doguv3 identifiers of all dogus in the remote server.
-func (r *httpRemote) GetAll(_ context.Context) ([]doguv3.Identifier, error) {
+func (r *httpDccClient) GetAll(_ context.Context) ([]doguv3.Identifier, error) {
 	requestURL := r.endpoint
 	body, err := r.request(requestURL)
 	if err != nil {
-		Log.Errorf("failed to request dogu identifiers from remote: %w", err)
+		slog.Error("failed to request dogu identifiers from remote: ", "error", err)
 		return nil, err
 	}
 
@@ -175,7 +172,7 @@ func (r *httpRemote) GetAll(_ context.Context) ([]doguv3.Identifier, error) {
 
 }
 
-func (r *httpRemote) receiveDoguFromRemoteOrCache(requestUrl string) (*doguv3.Dogu, error) {
+func (r *httpDccClient) receiveDoguFromRemoteOrCache(requestUrl string) (*doguv3.Dogu, error) {
 	//TODO caching implementation
 	var remoteDogu, err = r.readCachedDogu(requestUrl)
 	if err != nil {
@@ -187,14 +184,14 @@ func (r *httpRemote) receiveDoguFromRemoteOrCache(requestUrl string) (*doguv3.Do
 
 		err = r.writeDoguToCache(remoteDogu, requestUrl)
 		if err != nil {
-			Log.Errorf("get dogu request was ok but failed to write dogu to cache: %w", err)
+			slog.Error("get dogu request was ok but failed to write dogu to cache: ", "error", err)
 		}
 	}
 
 	return remoteDogu, nil
 }
 
-func (r *httpRemote) readCachedDogu(requestUrl string) (*doguv3.Dogu, error) {
+func (r *httpDccClient) readCachedDogu(requestUrl string) (*doguv3.Dogu, error) {
 	if r.remoteConfiguration.UseCache {
 		//TODO: get the dogu from cache for the version
 		/*		cacheFile := filepath.Join(dirname, "content.json")
@@ -210,7 +207,7 @@ func (r *httpRemote) readCachedDogu(requestUrl string) (*doguv3.Dogu, error) {
 	return nil, clienterrors.NewGenericError(fmt.Errorf("useCache is not activated"))
 }
 
-func (r *httpRemote) writeDoguToCache(doguToWrite *doguv3.Dogu, requestUrl string) error {
+func (r *httpDccClient) writeDoguToCache(doguToWrite *doguv3.Dogu, requestUrl string) error {
 	//TODO: write the dogu to cache for the version
 
 	/*	err := os.MkdirAll(dirname, os.ModePerm)
@@ -232,11 +229,11 @@ func (r *httpRemote) writeDoguToCache(doguToWrite *doguv3.Dogu, requestUrl strin
 	return nil
 }
 
-func (r *httpRemote) requestDogu(requestURL string) (*doguv3.Dogu, error) {
+func (r *httpDccClient) requestDogu(requestURL string) (*doguv3.Dogu, error) {
 
 	body, err := r.request(requestURL)
 	if err != nil {
-		Log.Errorf("failed to request dogu from remote: %w", err)
+		slog.Error("failed to request dogu from remote: ", "error", err)
 		return nil, err
 	}
 	var dogu *doguv3.Dogu
@@ -248,8 +245,8 @@ func (r *httpRemote) requestDogu(requestURL string) (*doguv3.Dogu, error) {
 	return dogu, nil
 }
 
-func (r *httpRemote) request(requestURL string) ([]byte, error) {
-	Log.Debugf("fetch json from remote %s", requestURL)
+func (r *httpDccClient) request(requestURL string) ([]byte, error) {
+	slog.Debug("fetch json from remote ", "URL", requestURL)
 
 	request, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
@@ -269,7 +266,7 @@ func (r *httpRemote) request(requestURL string) ([]byte, error) {
 		if resp != nil && resp.Body != nil {
 			errClose := resp.Body.Close()
 			if errClose != nil {
-				Log.Errorf("failed to close body: %w", errClose)
+				slog.Error("failed to close body: ", "error", errClose)
 			}
 		}
 	}()

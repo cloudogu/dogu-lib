@@ -1,4 +1,4 @@
-package repository
+package client
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
-	"github.com/cloudogu/dogu-lib/doguv3/client/clienterrors"
-	"github.com/cloudogu/dogu-lib/doguv3/client/config"
+	"github.com/cloudogu/dogu-lib/doguv3/dcc/clienterrors"
+	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ import (
 func TestNewRemoteDoguDescriptorRepository(t *testing.T) {
 	remoteConfig := &config.Remote{}
 	credentials := &config.Credentials{}
-	got, err := NewRemoteDoguDescriptorRepository(remoteConfig, credentials)
+	got, err := NewHttpDccClient(remoteConfig, credentials)
 
 	assert.NotNil(t, got)
 	assert.Nil(t, err)
@@ -32,7 +32,7 @@ func TestNewRemoteDoguDescriptorRepositoryWithTimeout(t *testing.T) {
 		Timeout: 15,
 	}
 	credentials := &config.Credentials{}
-	got, err := NewRemoteDoguDescriptorRepository(remoteConfig, credentials)
+	got, err := NewHttpDccClient(remoteConfig, credentials)
 
 	assert.NotNil(t, got)
 	assert.Nil(t, err)
@@ -43,7 +43,7 @@ func Test_newHTTPRemote(t *testing.T) {
 		remoteConfig := &config.Remote{}
 		creds := &config.Credentials{}
 
-		_, err := newHTTPRemote(remoteConfig, creds)
+		_, err := NewHttpDccClient(remoteConfig, creds)
 
 		require.NoError(t, err)
 	})
@@ -59,7 +59,7 @@ func Test_newHTTPRemote(t *testing.T) {
 		creds := &config.Credentials{}
 
 		// when
-		remote, err := newHTTPRemote(remoteConfig, creds)
+		remote, err := NewHttpDccClient(remoteConfig, creds)
 
 		// then
 		require.Error(t, err)
@@ -248,7 +248,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -262,7 +262,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 	t.Run("should return error for invalid doguNamespace", func(t *testing.T) {
 		// given
 		remoteConfig := &config.Remote{Endpoint: "http://localhost"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -278,7 +278,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 	t.Run("should return error for invalid dogu name", func(t *testing.T) {
 		// given
 		remoteConfig := &config.Remote{Endpoint: "http://localhost"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -299,7 +299,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -321,7 +321,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -355,7 +355,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -374,7 +374,7 @@ func Test_httpRemote_Get(t *testing.T) {
 	t.Run("should return error for invalid doguidentifier", func(t *testing.T) {
 		// given
 		remoteConfig := &config.Remote{Endpoint: "http://localhost"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		tests := []struct {
@@ -418,7 +418,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -439,8 +439,8 @@ func Test_httpRemote_Get(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		remoteConfig := &config.Remote{Endpoint: ts.URL + "/"}
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -476,7 +476,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -490,7 +490,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 	t.Run("should return error for invalid doguNamespace", func(t *testing.T) {
 		// given
 		remoteConfig := &config.Remote{Endpoint: "http://localhost"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -506,7 +506,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 	t.Run("should return error for invalid dogu name", func(t *testing.T) {
 		// given
 		remoteConfig := &config.Remote{Endpoint: "http://localhost"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -527,7 +527,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -549,7 +549,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -594,7 +594,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 		actualDoguIdentifiers, err := sut.GetAll(context.Background())
 
@@ -623,7 +623,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
 		credentials := &config.Credentials{Username: "user", Password: "password"}
-		sut, err := newHTTPRemote(remoteConfig, credentials)
+		sut, err := NewHttpDccClient(remoteConfig, credentials)
 		require.NoError(t, err)
 		actualDoguIdentifiers, err := sut.GetAll(context.Background())
 
@@ -652,7 +652,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
 		credentials := &config.Credentials{Username: "user", Password: "wrongpassword"}
-		sut, err := newHTTPRemote(remoteConfig, credentials)
+		sut, err := NewHttpDccClient(remoteConfig, credentials)
 		require.NoError(t, err)
 		actualDoguIdentifiers, err := sut.GetAll(context.Background())
 
@@ -670,7 +670,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -692,7 +692,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.Remote{Endpoint: ts.URL}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -709,7 +709,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// given:
 
 		remoteConfig := &config.Remote{Endpoint: "http://localhost:8080/\n"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -726,7 +726,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// given:
 
 		remoteConfig := &config.Remote{Endpoint: "ftp://localhost:8080/"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -743,7 +743,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// given:
 
 		remoteConfig := &config.Remote{Endpoint: "ftp://localhost:8080/"}
-		sut, err := newHTTPRemote(remoteConfig, nil)
+		sut, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
