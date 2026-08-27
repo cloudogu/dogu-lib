@@ -20,37 +20,33 @@ import (
 	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
 )
 
-func NewHttpDccClient(remoteConfig *config.Remote, credentials *config.Credentials) (DccClient, error) {
-	return newHttpDccClient(remoteConfig, credentials)
-}
-
 // httpDccClient is able to handle request to a remote DCC registry.
 type httpDccClient struct {
-	endpoint            string
-	credentials         *config.Credentials
-	client              *http.Client
-	remoteConfiguration *config.Remote
+	endpoint               string
+	credentials            *config.Credentials
+	httpClient             *http.Client
+	dccClientConfiguration *config.DccClientConfiguration
 }
 
-func newHttpDccClient(remoteConfig *config.Remote, credentials *config.Credentials) (*httpDccClient, error) {
+func newHttpDccClient(dccClientConfiguration *config.DccClientConfiguration, credentials *config.Credentials) (*httpDccClient, error) {
 
-	client, err := createHTTPClient(remoteConfig)
+	httpClient, err := createHTTPClient(dccClientConfiguration)
 	if err != nil {
 		return nil, err
 	}
 
-	endpoint := strings.TrimSuffix(remoteConfig.Endpoint, "/")
+	endpoint := strings.TrimSuffix(dccClientConfiguration.Endpoint, "/")
 
 	return &httpDccClient{
-		endpoint:            endpoint,
-		credentials:         credentials,
-		client:              client,
-		remoteConfiguration: remoteConfig,
+		endpoint:               endpoint,
+		credentials:            credentials,
+		httpClient:             httpClient,
+		dccClientConfiguration: dccClientConfiguration,
 	}, nil
 }
 
 // createHTTPClient creates a httpClient for the given remote settings.
-func createHTTPClient(config *config.Remote) (*http.Client, error) {
+func createHTTPClient(config *config.DccClientConfiguration) (*http.Client, error) {
 	timeout := 10 * time.Second
 	if config.Timeout != 0 {
 		timeout = time.Duration(config.Timeout) * time.Second
@@ -68,7 +64,7 @@ func createHTTPClient(config *config.Remote) (*http.Client, error) {
 	return httpClient, nil
 }
 
-func createProxyHTTPTransport(config *config.Remote) (*http.Transport, error) {
+func createProxyHTTPTransport(config *config.DccClientConfiguration) (*http.Transport, error) {
 	transport := &http.Transport{}
 
 	if config.ProxySettings.Enabled {
@@ -192,7 +188,7 @@ func (r *httpDccClient) receiveDoguFromRemoteOrCache(requestUrl string) (*doguv3
 }
 
 func (r *httpDccClient) readCachedDogu(requestUrl string) (*doguv3.Dogu, error) {
-	if r.remoteConfiguration.UseCache {
+	if r.dccClientConfiguration.UseCache {
 		//TODO: get the dogu from cache for the version
 		/*		cacheFile := filepath.Join(dirname, "content.json")
 				doguFromFile, _, err := core.ReadDoguFromFile(cacheFile)
@@ -257,7 +253,7 @@ func (r *httpDccClient) request(requestURL string) ([]byte, error) {
 		request.SetBasicAuth(r.credentials.Username, r.credentials.Password)
 	}
 
-	resp, err := r.client.Do(request)
+	resp, err := r.httpClient.Do(request)
 	if err != nil {
 		return nil, clienterrors.NewConnectionError(fmt.Errorf("failed to request remote registry: %w", err))
 	}

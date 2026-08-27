@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
+	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
 )
 
 type DccClient interface {
@@ -22,4 +23,8 @@ type DccClient interface {
 	// GetAll returns latest doguv3 identifiers of all dogus in the remote server.
 	// Generic error if there is any issue
 	GetAll(ctx context.Context) ([]doguv3.Identifier, error)
+}
+
+func NewHttpDccClient(remoteConfig *config.DccClientConfiguration, credentials *config.Credentials) (DccClient, error) {
+	return newHttpDccClient(remoteConfig, credentials)
 }
