@@ -248,11 +248,11 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualDogu, err := sut.GetLatest(context.Background(), doguNamespace, name)
+		actualDogu, err := dccClient.GetLatest(context.Background(), doguNamespace, name)
 
 		// then
 		require.NoError(t, err)
@@ -262,11 +262,11 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 	t.Run("should return error for invalid doguNamespace", func(t *testing.T) {
 		// given
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualDogu, err := sut.GetLatest(context.Background(), "INVALID_NAMESPACE", name)
+		actualDogu, err := dccClient.GetLatest(context.Background(), "INVALID_NAMESPACE", name)
 
 		// then
 		require.Error(t, err)
@@ -278,11 +278,11 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 	t.Run("should return error for invalid dogu name", func(t *testing.T) {
 		// given
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualDogu, err := sut.GetLatest(context.Background(), doguNamespace, "INVALID_NAME")
+		actualDogu, err := dccClient.GetLatest(context.Background(), doguNamespace, "INVALID_NAME")
 
 		// then
 		require.Error(t, err)
@@ -299,11 +299,11 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualDogu, err := sut.GetLatest(context.Background(), doguNamespace, name)
+		actualDogu, err := dccClient.GetLatest(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)
@@ -321,11 +321,11 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.GetLatest(context.Background(), doguNamespace, name)
+		response, err := dccClient.GetLatest(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)
@@ -342,7 +342,7 @@ func Test_httpRemote_Get(t *testing.T) {
 
 	expectedDogu := createTestDoguV3()
 
-	t.Run("should successfully get latest dogu", func(t *testing.T) {
+	t.Run("should successfully get dogu version", func(t *testing.T) {
 		// given: mock HTTP registry server
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, fmt.Sprintf("/%s/%s/%s", doguNamespace, name, version), r.URL.Path)
@@ -355,7 +355,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
@@ -364,17 +364,72 @@ func Test_httpRemote_Get(t *testing.T) {
 			Name:          name,
 			Version:       version,
 		}
-		actualDogu, err := sut.Get(context.Background(), doguIdentifier)
+		actualDogu, err := dccClient.Get(context.Background(), doguIdentifier)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, expectedDogu, actualDogu)
 	})
 
+	t.Run("should successfully get dogu version the second time from the cache", func(t *testing.T) {
+		// given: mock HTTP registry server
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, fmt.Sprintf("/%s/%s/%s", doguNamespace, name, version), r.URL.Path)
+			assert.Equal(t, http.MethodGet, r.Method)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(expectedDogu)
+		}))
+		defer ts.Close()
+
+		const CACHE_EXPIRY_SECONDS = 1
+		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL, UseCache: true, CacheExpirySeconds: CACHE_EXPIRY_SECONDS}
+		dccClient, err := newHttpDccClient(remoteConfig, nil)
+		require.NoError(t, err)
+
+		// when
+		doguIdentifier := doguv3.Identifier{
+			DoguNamespace: doguNamespace,
+			Name:          name,
+			Version:       version,
+		}
+		actualDogu, err := dccClient.Get(context.Background(), doguIdentifier)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, expectedDogu, actualDogu)
+
+		stats := dccClient.doguCache.Stats()
+		_, isPresent := dccClient.doguCache.GetIfPresent(doguIdentifier.String())
+		assert.True(t, isPresent)
+		assert.Equal(t, uint64(0), stats.Hits)
+
+		//Should get next time from cache
+		actualDogu, err = dccClient.Get(context.Background(), doguIdentifier)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, expectedDogu, actualDogu)
+
+		_, isPresent = dccClient.doguCache.GetIfPresent(doguIdentifier.String())
+		assert.True(t, isPresent)
+		stats = dccClient.doguCache.Stats()
+		//Called once from the Get and twice from the GetIfPresent call in test
+		assert.Equal(t, uint64(3), stats.Hits)
+
+		//Should be evicted after designated time
+		time.Sleep(time.Duration(CACHE_EXPIRY_SECONDS+1) * time.Second)
+
+		_, isPresent = dccClient.doguCache.GetIfPresent(doguIdentifier.String())
+		assert.False(t, isPresent)
+
+	})
+
 	t.Run("should return error for invalid doguidentifier", func(t *testing.T) {
 		// given
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		tests := []struct {
@@ -398,7 +453,7 @@ func Test_httpRemote_Get(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 
 				// when
-				actualDogu, err := sut.Get(context.Background(), tt.identifier)
+				actualDogu, err := dccClient.Get(context.Background(), tt.identifier)
 
 				// then
 				require.Error(t, err)
@@ -418,11 +473,11 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualDogu, err := sut.Get(context.Background(), *createTestDoguIdentifer(doguNamespace, name, version))
+		actualDogu, err := dccClient.Get(context.Background(), *createTestDoguIdentifer(doguNamespace, name, version))
 
 		// then
 		require.Error(t, err)
@@ -440,11 +495,11 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL + "/"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.Get(context.Background(), *createTestDoguIdentifer(doguNamespace, name, version))
+		response, err := dccClient.Get(context.Background(), *createTestDoguIdentifer(doguNamespace, name, version))
 
 		// then
 		require.Error(t, err)
@@ -476,11 +531,11 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualVersions, err := sut.GetVersions(context.Background(), doguNamespace, name)
+		actualVersions, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
 
 		// then
 		require.NoError(t, err)
@@ -490,11 +545,11 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 	t.Run("should return error for invalid doguNamespace", func(t *testing.T) {
 		// given
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualVersions, err := sut.GetVersions(context.Background(), "INVALID_NAMESPACE", name)
+		actualVersions, err := dccClient.GetVersions(context.Background(), "INVALID_NAMESPACE", name)
 
 		// then
 		require.Error(t, err)
@@ -506,11 +561,11 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 	t.Run("should return error for invalid dogu name", func(t *testing.T) {
 		// given
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualVersions, err := sut.GetVersions(context.Background(), doguNamespace, "INVALID_NAME")
+		actualVersions, err := dccClient.GetVersions(context.Background(), doguNamespace, "INVALID_NAME")
 
 		// then
 		require.Error(t, err)
@@ -527,11 +582,11 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		versions, err := sut.GetVersions(context.Background(), doguNamespace, name)
+		versions, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)
@@ -549,11 +604,11 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.GetVersions(context.Background(), doguNamespace, name)
+		response, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)
@@ -594,9 +649,9 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
-		actualDoguIdentifiers, err := sut.GetAll(context.Background())
+		actualDoguIdentifiers, err := dccClient.GetAll(context.Background())
 
 		// then
 		require.NoError(t, err)
@@ -623,9 +678,9 @@ func Test_httpRemote_GetAll(t *testing.T) {
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
 		credentials := &config.Credentials{Username: "user", Password: "password"}
-		sut, err := NewHttpDccClient(remoteConfig, credentials)
+		dccClient, err := NewHttpDccClient(remoteConfig, credentials)
 		require.NoError(t, err)
-		actualDoguIdentifiers, err := sut.GetAll(context.Background())
+		actualDoguIdentifiers, err := dccClient.GetAll(context.Background())
 
 		// then
 		require.NoError(t, err)
@@ -652,9 +707,9 @@ func Test_httpRemote_GetAll(t *testing.T) {
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
 		credentials := &config.Credentials{Username: "user", Password: "wrongpassword"}
-		sut, err := NewHttpDccClient(remoteConfig, credentials)
+		dccClient, err := NewHttpDccClient(remoteConfig, credentials)
 		require.NoError(t, err)
-		actualDoguIdentifiers, err := sut.GetAll(context.Background())
+		actualDoguIdentifiers, err := dccClient.GetAll(context.Background())
 
 		// then
 		require.Error(t, err)
@@ -670,11 +725,11 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		actualDogu, err := sut.GetAll(context.Background())
+		actualDogu, err := dccClient.GetAll(context.Background())
 
 		// then
 		require.Error(t, err)
@@ -692,11 +747,11 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		defer ts.Close()
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.GetAll(context.Background())
+		response, err := dccClient.GetAll(context.Background())
 
 		// then
 		require.Error(t, err)
@@ -709,11 +764,11 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// given:
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost:8080/\n"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.GetVersions(context.Background(), doguNamespace, name)
+		response, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)
@@ -726,11 +781,11 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// given:
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "ftp://localhost:8080/"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.GetVersions(context.Background(), doguNamespace, name)
+		response, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)
@@ -743,11 +798,11 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// given:
 
 		remoteConfig := &config.DccClientConfiguration{Endpoint: "ftp://localhost:8080/"}
-		sut, err := NewHttpDccClient(remoteConfig, nil)
+		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
 		// when
-		response, err := sut.GetVersions(context.Background(), doguNamespace, name)
+		response, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
 
 		// then
 		require.Error(t, err)

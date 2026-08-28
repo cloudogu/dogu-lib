@@ -6,11 +6,13 @@ import (
 
 // DccClientConfiguration contains dogu registry configuration details.
 type DccClientConfiguration struct {
-	Endpoint      string `validate:"url"`
-	ProxySettings ProxySettings
-	Insecure      bool  `json:",omitempty"`
-	Timeout       int64 `json:"timeout,omitempty"`
-	UseCache      bool  `json:"useCache,omitempty"`
+	Endpoint           string `validate:"url"`
+	ProxySettings      ProxySettings
+	Insecure           bool  `json:",omitempty"`
+	Timeout            int64 `json:"timeout,omitempty"`
+	UseCache           bool  `json:"useCache,omitempty"`
+	CacheExpirySeconds int64 `json:"cacheExpirySeconds,omitempty"`
+	CacheMaximumDogus  int   `json:"cacheMaximumDogus,omitempty"`
 }
 
 // ProxySettings contains the settings for http proxy
