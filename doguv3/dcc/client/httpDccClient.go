@@ -18,7 +18,7 @@ import (
 	"github.com/cloudogu/dogu-lib/doguv3"
 	"github.com/cloudogu/dogu-lib/doguv3/dcc/clienterrors"
 	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
-
+	"github.com/cloudogu/dogu-lib/doguv3/dcc/logging"
 	"github.com/maypok86/otter/v2"
 	"github.com/maypok86/otter/v2/stats"
 )
@@ -67,16 +67,19 @@ func createHTTPClient(config *config.DccClientConfiguration) (*http.Client, erro
 	if config.Timeout != 0 {
 		timeout = time.Duration(config.Timeout) * time.Second
 	}
-	httpClient := &http.Client{
-		Timeout: timeout,
-	}
 
 	transport, err := createProxyHTTPTransport(config)
 	if err != nil {
+		slog.Error("Error creating Proxy HttpTransport for DCC Client", "error", err)
 		return nil, err
 	}
-	httpClient.Transport = transport
 
+	httpClient := &http.Client{
+		Timeout: timeout,
+		Transport: &logging.LoggingRoundTripper{
+			Proxied: transport,
+		},
+	}
 	return httpClient, nil
 }
 
