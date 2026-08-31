@@ -119,7 +119,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 
 // GetLatest returns the detail about the latest dogu from the remote server by name.
 func (r *httpDccClient) GetLatest(_ context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
-	if !doguv3.IsValidName(doguNamespace) {
+	if !doguv3.IsValidNamespace(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
 	}
@@ -142,7 +142,7 @@ func (r *httpDccClient) Get(_ context.Context, doguIdentifier doguv3.Identifier)
 
 // GetVersions returns a version specific dogu descriptor.
 func (r *httpDccClient) GetVersions(_ context.Context, doguNamespace string, name string) ([]string, error) {
-	if !doguv3.IsValidName(doguNamespace) {
+	if !doguv3.IsValidNamespace(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
 	}

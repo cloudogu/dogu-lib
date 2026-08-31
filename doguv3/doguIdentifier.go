@@ -24,7 +24,7 @@ func (n Identifier) String() string {
 //   - a non-empty Name consisting of only lower case letters (a-z), numbers (0-9), minus (-) and underscores (_)
 //   - a non-empty Version that matches the SemVer format (MAJOR[.MINOR[.PATCH[-PRERELEASE][+BUILD]]])
 func (n Identifier) IsValid() bool {
-	return IsValidName(n.DoguNamespace) && IsValidName(n.Name) && IsValidVersion(n.Version)
+	return IsValidNamespace(n.DoguNamespace) && IsValidName(n.Name) && IsValidVersion(n.Version)
 }
 
 const nameRegex = "^[a-z0-9_\\-]+$"
@@ -32,6 +32,10 @@ const nameRegex = "^[a-z0-9_\\-]+$"
 func IsValidName(name string) bool {
 	matched, _ := regexp.MatchString(nameRegex, name)
 	return matched
+}
+
+func IsValidNamespace(namespace string) bool {
+	return IsValidName(namespace)
 }
 
 func IsValidVersion(version string) bool {
