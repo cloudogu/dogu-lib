@@ -9,7 +9,7 @@ type DoguRegistryConfiguration struct {
 	BaseURL            string
 	ProxySettings      ProxySettings
 	Timeout            int64
-	UseCache           bool
+	DisableCache       bool
 	CacheExpirySeconds int64
 	CacheMaximumDogus  int
 }

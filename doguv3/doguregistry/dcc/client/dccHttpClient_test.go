@@ -38,7 +38,7 @@ func TestNewRemoteDoguDescriptorRepositoryWithTimeout(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func Test_newHTTPRemote(t *testing.T) {
+func Test_newDccHttpClient(t *testing.T) {
 	t.Run("Should return new httpRemote", func(t *testing.T) {
 		remoteConfig := &config.DoguRegistryConfiguration{}
 		creds := &config.Credentials{}
@@ -65,6 +65,20 @@ func Test_newHTTPRemote(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, remote)
 		assert.Contains(t, err.Error(), "failed to parse proxy url")
+	})
+
+	t.Run("should return error when  configuration is not set ", func(t *testing.T) {
+		// given
+
+		creds := &config.Credentials{}
+
+		// when
+		remote, err := New(nil, creds)
+
+		// then
+		require.Error(t, err)
+		assert.Nil(t, remote)
+		assert.Contains(t, err.Error(), "dogu registry configuration must not be nil")
 	})
 
 }
@@ -396,7 +410,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		const CACHE_EXPIRY_SECONDS = 1
-		remoteConfig := &config.DoguRegistryConfiguration{BaseURL: ts.URL, UseCache: true, CacheExpirySeconds: CACHE_EXPIRY_SECONDS}
+		remoteConfig := &config.DoguRegistryConfiguration{BaseURL: ts.URL, DisableCache: false, CacheExpirySeconds: CACHE_EXPIRY_SECONDS}
 		dccClient, err := New(remoteConfig, nil)
 		require.NoError(t, err)
 

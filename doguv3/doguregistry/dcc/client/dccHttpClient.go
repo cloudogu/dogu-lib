@@ -32,6 +32,11 @@ type dccHttpClient struct {
 }
 
 func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials) (*dccHttpClient, error) {
+	if doguRegistryConfiguration == nil {
+		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu registry configuration must not be nil"))
+	}
+
+	setDefaults(doguRegistryConfiguration)
 
 	httpClient, err := createHTTPClient(doguRegistryConfiguration)
 	if err != nil {
@@ -59,8 +64,24 @@ func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credential
 	return dccHttpClient, nil
 }
 
+func setDefaults(doguRegistryConfiguration *config.DoguRegistryConfiguration) {
+	// Apply defaults when not provided by caller
+	if doguRegistryConfiguration.Timeout == 0 {
+		doguRegistryConfiguration.Timeout = 10
+	}
+
+	if !doguRegistryConfiguration.DisableCache {
+		if doguRegistryConfiguration.CacheExpirySeconds == 0 {
+			doguRegistryConfiguration.CacheExpirySeconds = 300
+		}
+		if doguRegistryConfiguration.CacheMaximumDogus == 0 {
+			doguRegistryConfiguration.CacheMaximumDogus = 100
+		}
+	}
+}
+
 func initializeCache(doguRegistryConfiguration *config.DoguRegistryConfiguration, doguRegistryClient *dccHttpClient) error {
-	if doguRegistryConfiguration.UseCache {
+	if !doguRegistryConfiguration.DisableCache {
 		cache, err := otter.New(&otter.Options[string, *doguv3.Dogu]{
 			MaximumSize: doguRegistryConfiguration.CacheMaximumDogus,
 			ExpiryCalculator: otter.ExpiryAccessing[string, *doguv3.Dogu](
@@ -77,11 +98,6 @@ func initializeCache(doguRegistryConfiguration *config.DoguRegistryConfiguration
 
 // createHTTPClient creates a http client for the given remote settings.
 func createHTTPClient(config *config.DoguRegistryConfiguration) (*http.Client, error) {
-	timeout := 10 * time.Second
-	if config.Timeout != 0 {
-		timeout = time.Duration(config.Timeout) * time.Second
-	}
-
 	transport, err := createProxyHTTPTransport(config)
 	if err != nil {
 		slog.Error("Error creating Proxy HttpTransport for DCC Client", "error", err)
@@ -89,7 +105,7 @@ func createHTTPClient(config *config.DoguRegistryConfiguration) (*http.Client, e
 	}
 
 	httpClient := &http.Client{
-		Timeout: timeout,
+		Timeout: time.Duration(config.Timeout) * time.Second,
 		Transport: &logging.LoggingRoundTripper{
 			Proxied: transport,
 		},
@@ -209,7 +225,7 @@ func (r *dccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error)
 }
 
 func (r *dccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
-	if r.config.UseCache {
+	if !r.config.DisableCache {
 		var remoteDogu, doguFound = r.cache.GetIfPresent(identifier.String())
 		if doguFound {
 			slog.Debug("dogu found in cache", "dogu", remoteDogu)
@@ -222,7 +238,7 @@ func (r *dccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl str
 		return nil, err
 	}
 
-	if r.config.UseCache {
+	if !r.config.DisableCache {
 		slog.Debug("saving dogu into the cache", "dogu", remoteDogu)
 		r.cache.Set(identifier.String(), remoteDogu)
 	}
