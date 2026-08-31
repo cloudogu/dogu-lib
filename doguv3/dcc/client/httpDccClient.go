@@ -118,7 +118,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 }
 
 // GetLatest returns the detail about the latest dogu from the remote server by name.
-func (r *httpDccClient) GetLatest(_ context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
+func (r *httpDccClient) GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
 	if !doguv3.IsValidNamespace(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -128,20 +128,20 @@ func (r *httpDccClient) GetLatest(_ context.Context, doguNamespace string, name 
 			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
 	}
 	requestUrl := r.endpoint + "/" + doguNamespace + "/" + name
-	return r.requestDogu(requestUrl)
+	return r.requestDogu(ctx, requestUrl)
 }
 
 // Get returns a version specific detail about the dogu.
-func (r *httpDccClient) Get(_ context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
+func (r *httpDccClient) Get(ctx context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
 	if !doguIdentifier.IsValid() {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
 	}
 	requestUrl := r.endpoint + "/" + doguIdentifier.DoguNamespace + "/" + doguIdentifier.Name + "/" + doguIdentifier.Version
-	return r.requestDoguWithCache(requestUrl, doguIdentifier)
+	return r.requestDoguWithCache(ctx, requestUrl, doguIdentifier)
 }
 
 // GetVersions returns a version specific dogu descriptor.
-func (r *httpDccClient) GetVersions(_ context.Context, doguNamespace string, name string) ([]string, error) {
+func (r *httpDccClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
 	if !doguv3.IsValidNamespace(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -152,7 +152,7 @@ func (r *httpDccClient) GetVersions(_ context.Context, doguNamespace string, nam
 	}
 
 	requestURL := r.endpoint + "/" + doguNamespace + "/" + name + "/" + "_versions"
-	body, err := r.request(requestURL)
+	body, err := r.request(ctx, requestURL)
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote", "error", err)
 		return nil, err
@@ -169,9 +169,9 @@ func (r *httpDccClient) GetVersions(_ context.Context, doguNamespace string, nam
 }
 
 // GetAll returns latest doguv3 identifiers of all dogus in the remote server.
-func (r *httpDccClient) GetAll(_ context.Context) ([]doguv3.Identifier, error) {
+func (r *httpDccClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error) {
 	requestURL := r.endpoint
-	body, err := r.request(requestURL)
+	body, err := r.request(ctx, requestURL)
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote: ", "error", err)
 		return nil, err
@@ -187,7 +187,7 @@ func (r *httpDccClient) GetAll(_ context.Context) ([]doguv3.Identifier, error) {
 
 }
 
-func (r *httpDccClient) requestDoguWithCache(requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
+func (r *httpDccClient) requestDoguWithCache(ctx context.Context, requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
 	if r.dccClientConfiguration.UseCache {
 		var remoteDogu, doguFound = r.doguCache.GetIfPresent(identifier.String())
 		if doguFound {
@@ -195,7 +195,7 @@ func (r *httpDccClient) requestDoguWithCache(requestUrl string, identifier doguv
 			return remoteDogu, nil
 		}
 	}
-	remoteDogu, err := r.requestDogu(requestUrl)
+	remoteDogu, err := r.requestDogu(ctx, requestUrl)
 
 	if err != nil {
 		return nil, err
@@ -209,9 +209,9 @@ func (r *httpDccClient) requestDoguWithCache(requestUrl string, identifier doguv
 	return remoteDogu, nil
 }
 
-func (r *httpDccClient) requestDogu(requestURL string) (*doguv3.Dogu, error) {
+func (r *httpDccClient) requestDogu(ctx context.Context, requestURL string) (*doguv3.Dogu, error) {
 
-	body, err := r.request(requestURL)
+	body, err := r.request(ctx, requestURL)
 	if err != nil {
 		slog.Error("failed to request dogu from remote: ", "error", err)
 		return nil, err
@@ -225,10 +225,10 @@ func (r *httpDccClient) requestDogu(requestURL string) (*doguv3.Dogu, error) {
 	return dogu, nil
 }
 
-func (r *httpDccClient) request(requestURL string) ([]byte, error) {
+func (r *httpDccClient) request(ctx context.Context, requestURL string) ([]byte, error) {
 	slog.Debug("fetch json from remote ", "URL", requestURL)
 
-	request, err := http.NewRequest("GET", requestURL, nil)
+	request, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to prepare request: %w", err))
 	}

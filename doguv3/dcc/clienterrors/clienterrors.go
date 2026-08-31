@@ -20,6 +20,9 @@ type Error struct {
 }
 
 func (c Error) Error() string {
+	if c.cause == nil {
+		return ""
+	}
 	return c.cause.Error()
 }
 
