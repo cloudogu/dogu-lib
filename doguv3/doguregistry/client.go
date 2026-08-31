@@ -1,13 +1,12 @@
-package client
+package doguregistry
 
 import (
 	"context"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
-	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
 )
 
-type DccClient interface {
+type Client interface {
 	// GetLatest returns the latest dogu descriptor for a dogu from the remote server.
 	// Generic error if there is any issue
 	GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error)
@@ -23,8 +22,4 @@ type DccClient interface {
 	// GetAll returns latest doguv3 identifiers of all dogus in the remote server.
 	// Generic error if there is any issue
 	GetAll(ctx context.Context) ([]doguv3.Identifier, error)
-}
-
-func NewHttpDccClient(remoteConfig *config.DccClientConfiguration, credentials *config.Credentials) (DccClient, error) {
-	return newHttpDccClient(remoteConfig, credentials)
 }

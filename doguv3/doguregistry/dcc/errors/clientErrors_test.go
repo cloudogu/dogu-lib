@@ -1,4 +1,4 @@
-package clienterrors
+package errors
 
 import (
 	"testing"
