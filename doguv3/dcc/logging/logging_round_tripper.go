@@ -27,11 +27,15 @@ func (l *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 	duration := time.Since(startTime)
 
+	// 2. Sensible Daten aus der Kopie entfernen
+	safeURL := *req.URL
+	safeURL.User = nil
+
 	if err != nil {
 		// Log the failure if the network request fails completely
 		slog.Error("DCC Http Client Request failed: ",
 			"Method", req.Method,
-			"URL", req.URL.String(),
+			"URL", safeURL.String(),
 			"Duration", duration,
 			"Error", err)
 		return nil, err
@@ -40,7 +44,7 @@ func (l *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	// Log success with URL, status code, and execution time
 	slog.Info("DCC Http Client Request information: ",
 		"Method", req.Method,
-		"URL", req.URL.String(),
+		"URL", safeURL.String(),
 		"Duration", duration,
 		"Status", resp.StatusCode)
 	return resp, nil
