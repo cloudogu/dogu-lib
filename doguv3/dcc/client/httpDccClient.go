@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -103,10 +102,6 @@ func createProxyHTTPTransport(config *config.DccClientConfiguration) (*http.Tran
 		}
 		transport.Proxy = http.ProxyURL(proxyURL)
 		appendProxyAuthorizationIfRequired(transport, &config.ProxySettings)
-	}
-
-	transport.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: config.Insecure,
 	}
 
 	return transport, nil
@@ -304,20 +299,10 @@ func checkStatusCode(response *http.Response) error {
 }
 
 func extractRemoteBody(responseBodyReader io.ReadCloser, statusCode int) string {
-	buf := new(strings.Builder)
-	_, err := io.Copy(buf, responseBodyReader)
-	if err != nil {
-		return fmt.Sprintf("error while copying response body: %s", err.Error())
-	}
-
-	responseBody := []byte(buf.String())
-
 	body := &remoteResponseBody{statusCode: statusCode}
-	jsonErr := json.Unmarshal(responseBody, body)
-	if jsonErr != nil {
+	if jsonErr := json.NewDecoder(responseBodyReader).Decode(body); jsonErr != nil {
 		return fmt.Sprintf("error while parsing response body: %s", jsonErr.Error())
 	}
-
 	return body.String()
 }
 

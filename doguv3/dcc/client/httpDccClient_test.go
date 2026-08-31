@@ -208,7 +208,7 @@ func Test_extractRemoteErrorBody(t *testing.T) {
 		actual := extractRemoteBody(responseBody, 400)
 
 		// then
-		assert.Contains(t, "error while parsing response body: unexpected end of JSON input", actual)
+		assert.Contains(t, actual, "error while parsing response body")
 	})
 }
 
@@ -431,7 +431,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		assert.Equal(t, uint64(3), stats.Hits)
 
 		//Should be evicted after designated time
-		time.Sleep(time.Duration(CACHE_EXPIRY_SECONDS+1) * time.Second)
+		time.Sleep(time.Duration(CACHE_EXPIRY_SECONDS) * time.Second)
 
 		_, isPresent = dccClient.doguCache.GetIfPresent(doguIdentifier.String())
 		assert.False(t, isPresent)

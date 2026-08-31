@@ -8,7 +8,6 @@ import (
 type DccClientConfiguration struct {
 	DccApiBaseURL      string `validate:"url"`
 	ProxySettings      ProxySettings
-	Insecure           bool  `json:",omitempty"`
 	Timeout            int64 `json:"timeout,omitempty"`
 	UseCache           bool  `json:"useCache,omitempty"`
 	CacheExpirySeconds int64 `json:"cacheExpirySeconds,omitempty"`
