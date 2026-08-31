@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -18,8 +17,7 @@ func (l *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	// Ensure there is a proxied transport; fall back to the default transport when nil
 	proxied := l.Proxied
 	if proxied == nil {
-		slog.Error("Ensure there is a proxied transport")
-		return nil, fmt.Errorf("proxied transport is not provided to LoggingRoundTripper")
+		proxied = http.DefaultTransport
 	}
 
 	// Execute the actual HTTP request

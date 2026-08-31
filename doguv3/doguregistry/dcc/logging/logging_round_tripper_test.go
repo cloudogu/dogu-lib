@@ -181,17 +181,12 @@ func TestLoggingRoundTripper_LogsErrorOnEmptyTransport(t *testing.T) {
 		}
 	}()
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "proxied transport is not provided to LoggingRoundTripper")
-
 	// 5. Assertions on the generated error logs
 	logOutput := logBuffer.String()
 
 	// Verify that the log captured the standard context cancellation text
 
-	expectedErrorString := "Ensure there is a proxied transport"
-	if !strings.Contains(logOutput, expectedErrorString) {
-		t.Errorf("Expected logs to contain error message %q, but got:\n%s", expectedErrorString, logOutput)
-	}
+	expectedErrorString := "DCC Http Client Request failed"
+	assert.Contains(t, logOutput, expectedErrorString)
 
 }
