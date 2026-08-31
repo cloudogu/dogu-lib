@@ -27,7 +27,7 @@ func (l *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 	duration := time.Since(startTime)
 
-	// 2. Sensible Daten aus der Kopie entfernen
+	// remove sensitive fields from a copy of the URL
 	safeURL := *req.URL
 	safeURL.User = nil
 

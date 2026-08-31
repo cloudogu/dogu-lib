@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	neturl "net/url"
-
 	"github.com/cloudogu/dogu-lib/doguv3"
 	"github.com/cloudogu/dogu-lib/doguv3/dcc/clienterrors"
 	"github.com/cloudogu/dogu-lib/doguv3/dcc/config"
@@ -96,7 +94,7 @@ func createProxyHTTPTransport(config *config.DccClientConfiguration) (*http.Tran
 		proxyURLString := config.ProxySettings.CreateURL()
 		slog.Info("configure http client to use proxy", "proxyURL", proxyURLString)
 
-		proxyURL, err := neturl.Parse(proxyURLString)
+		proxyURL, err := url.Parse(proxyURLString)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse proxy url %s: %w", proxyURLString, err)
 		}
@@ -115,7 +113,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 			transport.ProxyConnectHeader = make(http.Header)
 		}
 
-		transport.ProxyConnectHeader.Add("Proxy-Authorization", basicAuthorization)
+		transport.ProxyConnectHeader.Set("Proxy-Authorization", basicAuthorization)
 	}
 }
 
@@ -229,13 +227,12 @@ func (r *httpDccClient) requestDogu(ctx context.Context, requestURL string) (*do
 		slog.Error("failed to request dogu from remote: ", "error", err)
 		return nil, err
 	}
-	var dogu *doguv3.Dogu
-	err = json.Unmarshal(body, &dogu)
-	if err != nil {
+	var dogu doguv3.Dogu
+	if err = json.Unmarshal(body, &dogu); err != nil {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse json of request: %w", err))
 	}
 
-	return dogu, nil
+	return &dogu, nil
 }
 
 func (r *httpDccClient) request(ctx context.Context, requestURL string) ([]byte, error) {
@@ -269,7 +266,8 @@ func (r *httpDccClient) request(ctx context.Context, requestURL string) ([]byte,
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	const maxBodySize = 1 << 23 // 8MB
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
 	if err != nil {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to read response body: %w", err))
 	}
@@ -299,8 +297,9 @@ func checkStatusCode(response *http.Response) error {
 }
 
 func extractRemoteBody(responseBodyReader io.ReadCloser, statusCode int) string {
+	const maxBodySize = 1 << 20 // 1MB
 	body := &remoteResponseBody{statusCode: statusCode}
-	if jsonErr := json.NewDecoder(responseBodyReader).Decode(body); jsonErr != nil {
+	if jsonErr := json.NewDecoder(io.LimitReader(responseBodyReader, maxBodySize)).Decode(body); jsonErr != nil {
 		return fmt.Sprintf("error while parsing response body: %s", jsonErr.Error())
 	}
 	return body.String()
