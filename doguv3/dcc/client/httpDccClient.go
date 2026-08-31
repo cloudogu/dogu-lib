@@ -10,6 +10,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -25,7 +27,7 @@ import (
 
 // httpDccClient is able to handle request to a remote DCC registry.
 type httpDccClient struct {
-	endpoint               string
+	dccApiBaseURL          *url.URL
 	credentials            *config.Credentials
 	httpClient             *http.Client
 	dccClientConfiguration *config.DccClientConfiguration
@@ -39,10 +41,15 @@ func newHttpDccClient(dccClientConfiguration *config.DccClientConfiguration, cre
 		return nil, err
 	}
 
-	endpoint := strings.TrimSuffix(dccClientConfiguration.Endpoint, "/")
+	endpoint := strings.TrimSuffix(dccClientConfiguration.DccApiBaseURL, "/")
+
+	baseURL, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse endpoint url %s: %w", endpoint, err))
+	}
 
 	httpDccClient := &httpDccClient{
-		endpoint:               endpoint,
+		dccApiBaseURL:          baseURL,
 		credentials:            credentials,
 		httpClient:             httpClient,
 		dccClientConfiguration: dccClientConfiguration,
@@ -110,7 +117,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 		authorization := proxySettings.Username + ":" + proxySettings.Password
 		basicAuthorization := "Basic " + base64.StdEncoding.EncodeToString([]byte(authorization))
 		if transport.ProxyConnectHeader == nil {
-			transport.ProxyConnectHeader = make(map[string][]string)
+			transport.ProxyConnectHeader = make(http.Header)
 		}
 
 		transport.ProxyConnectHeader.Add("Proxy-Authorization", basicAuthorization)
@@ -127,7 +134,11 @@ func (r *httpDccClient) GetLatest(ctx context.Context, doguNamespace string, nam
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
 	}
-	requestUrl := r.endpoint + "/" + doguNamespace + "/" + name
+
+	requestUrl := r.dccApiBaseURL.ResolveReference(
+		&url.URL{
+			Path: path.Join(r.dccApiBaseURL.Path, doguNamespace, name),
+		}).String()
 	return r.requestDogu(ctx, requestUrl)
 }
 
@@ -136,7 +147,11 @@ func (r *httpDccClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 	if !doguIdentifier.IsValid() {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
 	}
-	requestUrl := r.endpoint + "/" + doguIdentifier.DoguNamespace + "/" + doguIdentifier.Name + "/" + doguIdentifier.Version
+
+	requestUrl := r.dccApiBaseURL.ResolveReference(
+		&url.URL{
+			Path: path.Join(r.dccApiBaseURL.Path, doguIdentifier.DoguNamespace, doguIdentifier.Name, doguIdentifier.Version),
+		}).String()
 	return r.requestDoguWithCache(ctx, requestUrl, doguIdentifier)
 }
 
@@ -150,8 +165,12 @@ func (r *httpDccClient) GetVersions(ctx context.Context, doguNamespace string, n
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
 	}
+	versionsPath := "_versions"
+	requestURL := r.dccApiBaseURL.ResolveReference(
+		&url.URL{
+			Path: path.Join(r.dccApiBaseURL.Path, doguNamespace, name, versionsPath),
+		}).String()
 
-	requestURL := r.endpoint + "/" + doguNamespace + "/" + name + "/" + "_versions"
 	body, err := r.request(ctx, requestURL)
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote", "error", err)
@@ -170,8 +189,7 @@ func (r *httpDccClient) GetVersions(ctx context.Context, doguNamespace string, n
 
 // GetAll returns latest doguv3 identifiers of all dogus in the remote server.
 func (r *httpDccClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error) {
-	requestURL := r.endpoint
-	body, err := r.request(ctx, requestURL)
+	body, err := r.request(ctx, r.dccApiBaseURL.String())
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote: ", "error", err)
 		return nil, err

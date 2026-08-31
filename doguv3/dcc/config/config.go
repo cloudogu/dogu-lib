@@ -6,7 +6,7 @@ import (
 
 // DccClientConfiguration contains dogu registry configuration details.
 type DccClientConfiguration struct {
-	Endpoint           string `validate:"url"`
+	DccApiBaseURL      string `validate:"url"`
 	ProxySettings      ProxySettings
 	Insecure           bool  `json:",omitempty"`
 	Timeout            int64 `json:"timeout,omitempty"`

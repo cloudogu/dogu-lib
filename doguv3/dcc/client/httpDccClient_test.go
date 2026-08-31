@@ -66,6 +66,18 @@ func Test_newHTTPRemote(t *testing.T) {
 		assert.Nil(t, remote)
 		assert.Contains(t, err.Error(), "failed to parse proxy url")
 	})
+
+}
+func Test_NewHttpDccClient_fails_for_wrong_url(t *testing.T) {
+	// given:
+
+	remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "http://localhost:8080/\n"}
+	_, err := NewHttpDccClient(remoteConfig, nil)
+
+	// then
+	require.Error(t, err)
+	assert.True(t, clienterrors.IsGenericError(err))
+	assert.Contains(t, err.Error(), "failed to parse endpoint url")
 }
 
 func Test_createProxyHTTPTransport(t *testing.T) {
@@ -247,7 +259,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -261,7 +273,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 
 	t.Run("should return error for invalid doguNamespace", func(t *testing.T) {
 		// given
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "http://localhost"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -277,7 +289,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 
 	t.Run("should return error for invalid dogu name", func(t *testing.T) {
 		// given
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "http://localhost"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -298,7 +310,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -320,7 +332,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -354,7 +366,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -384,7 +396,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		defer ts.Close()
 
 		const CACHE_EXPIRY_SECONDS = 1
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL, UseCache: true, CacheExpirySeconds: CACHE_EXPIRY_SECONDS}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL, UseCache: true, CacheExpirySeconds: CACHE_EXPIRY_SECONDS}
 		dccClient, err := newHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -428,7 +440,7 @@ func Test_httpRemote_Get(t *testing.T) {
 
 	t.Run("should return error for invalid doguidentifier", func(t *testing.T) {
 		// given
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "http://localhost"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -472,7 +484,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -494,7 +506,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL + "/"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL + "/"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -530,7 +542,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -544,7 +556,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 
 	t.Run("should return error for invalid doguNamespace", func(t *testing.T) {
 		// given
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "http://localhost"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -560,7 +572,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 
 	t.Run("should return error for invalid dogu name", func(t *testing.T) {
 		// given
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "http://localhost"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -581,7 +593,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -603,7 +615,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -648,7 +660,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 		actualDoguIdentifiers, err := dccClient.GetAll(context.Background())
@@ -676,7 +688,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		credentials := &config.Credentials{Username: "user", Password: "password"}
 		dccClient, err := NewHttpDccClient(remoteConfig, credentials)
 		require.NoError(t, err)
@@ -705,7 +717,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		credentials := &config.Credentials{Username: "user", Password: "wrongpassword"}
 		dccClient, err := NewHttpDccClient(remoteConfig, credentials)
 		require.NoError(t, err)
@@ -724,7 +736,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -746,7 +758,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: ts.URL}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: ts.URL}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -760,27 +772,10 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to parse response json of request")
 	})
 
-	t.Run("should successfully return error for wrong url", func(t *testing.T) {
-		// given:
-
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "http://localhost:8080/\n"}
-		dccClient, err := NewHttpDccClient(remoteConfig, nil)
-		require.NoError(t, err)
-
-		// when
-		response, err := dccClient.GetVersions(context.Background(), doguNamespace, name)
-
-		// then
-		require.Error(t, err)
-		assert.Nil(t, response)
-		assert.True(t, clienterrors.IsGenericError(err))
-		assert.Contains(t, err.Error(), "failed to prepare request")
-	})
-
 	t.Run("should successfully return error for wrong protocol", func(t *testing.T) {
 		// given:
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "ftp://localhost:8080/"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "ftp://localhost:8080/"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
@@ -797,7 +792,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 	t.Run("should successfully return error for wrong protocol", func(t *testing.T) {
 		// given:
 
-		remoteConfig := &config.DccClientConfiguration{Endpoint: "ftp://localhost:8080/"}
+		remoteConfig := &config.DccClientConfiguration{DccApiBaseURL: "ftp://localhost:8080/"}
 		dccClient, err := NewHttpDccClient(remoteConfig, nil)
 		require.NoError(t, err)
 
