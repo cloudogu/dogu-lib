@@ -7,6 +7,9 @@ based on the date of the release.
 
 ## [Unreleased]
 
+### Added
+- [#7] Added a client that gets doguV3 information from dogu.cloudogu.com
+
 ## [v1.0.0] - 2026-08-17
 ### Added
 - [#1] Split name into doguNamespace and chartName
