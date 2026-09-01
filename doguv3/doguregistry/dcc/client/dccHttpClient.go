@@ -123,7 +123,8 @@ func createHTTPClient(doguRegistryConfiguration *config.DoguRegistryConfiguratio
 }
 
 func createProxyHTTPTransport(doguRegistryConfiguration *config.DoguRegistryConfiguration) (*http.Transport, error) {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	defaultTransport := http.DefaultTransport.(*http.Transport)
+	transport := defaultTransport.Clone()
 
 	if doguRegistryConfiguration.ProxySettings.Enabled {
 		proxyURLString := doguRegistryConfiguration.ProxySettings.CreateURL()
