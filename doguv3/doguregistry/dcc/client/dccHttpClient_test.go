@@ -255,6 +255,47 @@ func Test_remoteResponseBody_String(t *testing.T) {
 	}
 }
 
+func TestInsecureSkipVerify(t *testing.T) {
+
+	// given
+
+	doguNamespace := "official"
+	name := "jenkins"
+	expectedDogu := createTestDoguV3()
+
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, fmt.Sprintf("/%s/%s", doguNamespace, name), r.URL.Path)
+		assert.Equal(t, http.MethodGet, r.Method)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(expectedDogu)
+	}))
+	defer ts.Close()
+
+	// 1. Test with InsecureSkipVerify: false (Should Fail)
+
+	//when
+	remoteConfig := &config.DoguRegistryConfiguration{BaseURL: ts.URL, InsecureSkipVerify: false}
+	dccClient, err := New(remoteConfig, nil)
+	require.NoError(t, err)
+
+	//then
+	_, err = dccClient.GetLatest(context.Background(), doguNamespace, name)
+	require.Error(t, err, "Expected connection to fail with InsecureSkipVerify=false, but it succeeded.")
+
+	// 2. Test with InsecureSkipVerify: true (Should Succeed)
+
+	//when
+	remoteConfig = &config.DoguRegistryConfiguration{BaseURL: ts.URL, InsecureSkipVerify: true}
+	dccClient, err = New(remoteConfig, nil)
+	require.NoError(t, err)
+
+	//then
+	actualDogu, err := dccClient.GetLatest(context.Background(), doguNamespace, name)
+	require.NoError(t, err, fmt.Sprintf("Expected connection to succeed with InsecureSkipVerify=true, but got error: %v", err))
+	assert.Equal(t, expectedDogu, actualDogu)
+}
 func Test_httpRemote_GetLatest(t *testing.T) {
 	doguNamespace := "official"
 	name := "jenkins"

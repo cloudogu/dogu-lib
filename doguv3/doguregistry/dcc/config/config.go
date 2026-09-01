@@ -12,6 +12,7 @@ type DoguRegistryConfiguration struct {
 	DisableCache       bool
 	CacheExpirySeconds int64
 	CacheMaximumDogus  int
+	InsecureSkipVerify bool
 }
 
 // ProxySettings contains the settings for http proxy

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -121,11 +122,11 @@ func createHTTPClient(doguRegistryConfiguration *config.DoguRegistryConfiguratio
 	return httpClient, nil
 }
 
-func createProxyHTTPTransport(config *config.DoguRegistryConfiguration) (*http.Transport, error) {
+func createProxyHTTPTransport(doguRegistryConfiguration *config.DoguRegistryConfiguration) (*http.Transport, error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-	if config.ProxySettings.Enabled {
-		proxyURLString := config.ProxySettings.CreateURL()
+	if doguRegistryConfiguration.ProxySettings.Enabled {
+		proxyURLString := doguRegistryConfiguration.ProxySettings.CreateURL()
 		slog.Info("configure http client to use proxy", "proxyURL", proxyURLString)
 
 		proxyURL, err := url.Parse(proxyURLString)
@@ -133,9 +134,12 @@ func createProxyHTTPTransport(config *config.DoguRegistryConfiguration) (*http.T
 			return nil, fmt.Errorf("failed to parse proxy url %s: %w", proxyURLString, err)
 		}
 		transport.Proxy = http.ProxyURL(proxyURL)
-		appendProxyAuthorizationIfRequired(transport, &config.ProxySettings)
+		appendProxyAuthorizationIfRequired(transport, &doguRegistryConfiguration.ProxySettings)
 	}
-
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	}
+	transport.TLSClientConfig.InsecureSkipVerify = doguRegistryConfiguration.InsecureSkipVerify
 	return transport, nil
 }
 
