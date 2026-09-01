@@ -21,7 +21,7 @@ func NewLoggingRoundTripper(transport http.RoundTripper) *LoggingRoundTripper {
 func (l *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	startTime := time.Now()
 
-	// Ensure there is a proxied transport; fall back to the default transport when nil
+	// Ensure there is an original transport; throw an error when nil
 	originalTransport := l.originalTransport
 	if originalTransport == nil {
 		slog.Error("Ensure there is an original Transport")

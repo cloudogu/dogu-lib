@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
-	clienterrors "github.com/cloudogu/dogu-lib/doguv3/doguregistry"
+	"github.com/cloudogu/dogu-lib/doguv3/doguregistry"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/config"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/logging"
 	"github.com/maypok86/otter/v2"
@@ -28,41 +28,44 @@ const (
 	defaultCacheExpirySeconds = 300
 )
 
+var _ doguregistry.Client = (*DccHttpClient)(nil)
+
 // DccHttpClient is able to handle request to a remote DCC registry.
 type DccHttpClient struct {
-	baseURL     *url.URL
-	credentials *config.Credentials
-	httpClient  *http.Client
-	config      *config.DoguRegistryConfiguration
-	cache       *otter.Cache[string, *doguv3.Dogu]
+	baseURL                   *url.URL
+	credentials               *config.Credentials
+	httpClient                *http.Client
+	doguRegistryConfiguration *config.DoguRegistryConfiguration
+	cache                     *otter.Cache[string, *doguv3.Dogu]
 }
 
 func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials) (*DccHttpClient, error) {
 	if doguRegistryConfiguration == nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu registry configuration must not be nil"))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("dogu registry configuration must not be nil"))
 	}
+	clonedConfiguration := *doguRegistryConfiguration
 
-	setDefaults(doguRegistryConfiguration)
+	setDefaults(&clonedConfiguration)
 
-	httpClient, err := createHTTPClient(doguRegistryConfiguration)
+	httpClient, err := createHTTPClient(&clonedConfiguration)
 	if err != nil {
 		return nil, err
 	}
 
-	endpoint := strings.TrimSuffix(doguRegistryConfiguration.BaseURL, "/")
+	endpoint := strings.TrimSuffix(clonedConfiguration.BaseURL, "/")
 
 	baseURL, err := url.Parse(endpoint)
 	if err != nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse endpoint url %s: %w", endpoint, err))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to parse endpoint url %s: %w", endpoint, err))
 	}
 
 	dccHttpClient := &DccHttpClient{
-		baseURL:     baseURL,
-		credentials: credentials,
-		httpClient:  httpClient,
-		config:      doguRegistryConfiguration,
+		baseURL:                   baseURL,
+		credentials:               credentials,
+		httpClient:                httpClient,
+		doguRegistryConfiguration: &clonedConfiguration,
 	}
-	if err := initializeCache(doguRegistryConfiguration, dccHttpClient); err != nil {
+	if err := initializeCache(&clonedConfiguration, dccHttpClient); err != nil {
 		slog.Error("failed to initialize cache", "error", err)
 		return nil, err
 	}
@@ -104,22 +107,22 @@ func initializeCache(doguRegistryConfiguration *config.DoguRegistryConfiguration
 }
 
 // createHTTPClient creates a http client for the given remote settings.
-func createHTTPClient(config *config.DoguRegistryConfiguration) (*http.Client, error) {
-	transport, err := createProxyHTTPTransport(config)
+func createHTTPClient(doguRegistryConfiguration *config.DoguRegistryConfiguration) (*http.Client, error) {
+	transport, err := createProxyHTTPTransport(doguRegistryConfiguration)
 	if err != nil {
 		slog.Error("Error creating Proxy HttpTransport for DCC Client", "error", err)
 		return nil, err
 	}
 
 	httpClient := &http.Client{
-		Timeout:   time.Duration(config.Timeout) * time.Second,
+		Timeout:   time.Duration(doguRegistryConfiguration.Timeout) * time.Second,
 		Transport: logging.NewLoggingRoundTripper(transport),
 	}
 	return httpClient, nil
 }
 
 func createProxyHTTPTransport(config *config.DoguRegistryConfiguration) (*http.Transport, error) {
-	transport := &http.Transport{}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	if config.ProxySettings.Enabled {
 		proxyURLString := config.ProxySettings.CreateURL()
@@ -151,11 +154,11 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 // GetLatest returns the detail about the latest dogu from the remote server by name.
 func (r *DccHttpClient) GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
 	if !doguv3.IsValidNamespace(doguNamespace) {
-		return nil, clienterrors.NewGenericError(
+		return nil, doguregistry.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
 	}
 	if !doguv3.IsValidName(name) {
-		return nil, clienterrors.NewGenericError(
+		return nil, doguregistry.NewGenericError(
 			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
 	}
 
@@ -169,7 +172,7 @@ func (r *DccHttpClient) GetLatest(ctx context.Context, doguNamespace string, nam
 // Get returns a version specific detail about the dogu.
 func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
 	if !doguIdentifier.IsValid() {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
 	}
 
 	requestUrl := r.baseURL.ResolveReference(
@@ -182,11 +185,11 @@ func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 // GetVersions returns a version specific dogu descriptor.
 func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
 	if !doguv3.IsValidNamespace(doguNamespace) {
-		return nil, clienterrors.NewGenericError(
+		return nil, doguregistry.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
 	}
 	if !doguv3.IsValidName(name) {
-		return nil, clienterrors.NewGenericError(
+		return nil, doguregistry.NewGenericError(
 			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
 	}
 	versionsPath := "_versions"
@@ -204,7 +207,7 @@ func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, n
 	var versions []string
 	err = json.Unmarshal(body, &versions)
 	if err != nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse response json of request: %w", err))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to parse response json of request: %w", err))
 	}
 
 	return versions, nil
@@ -222,7 +225,7 @@ func (r *DccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error)
 	var dogiIdentifiers []doguv3.Identifier
 	err = json.Unmarshal(body, &dogiIdentifiers)
 	if err != nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse response json of request: %w", err))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to parse response json of request: %w", err))
 	}
 
 	return dogiIdentifiers, nil
@@ -230,7 +233,7 @@ func (r *DccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error)
 }
 
 func (r *DccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
-	if !r.config.DisableCache {
+	if r.cache != nil {
 		var remoteDogu, doguFound = r.cache.GetIfPresent(identifier.String())
 		if doguFound {
 			slog.Debug("dogu found in cache", "dogu", remoteDogu)
@@ -243,7 +246,7 @@ func (r *DccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl str
 		return nil, err
 	}
 
-	if !r.config.DisableCache {
+	if r.cache != nil {
 		slog.Debug("saving dogu into the cache", "dogu", remoteDogu)
 		r.cache.Set(identifier.String(), remoteDogu)
 	}
@@ -260,7 +263,7 @@ func (r *DccHttpClient) requestDogu(ctx context.Context, requestURL string) (*do
 	}
 	var dogu doguv3.Dogu
 	if err = json.Unmarshal(body, &dogu); err != nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse json of request: %w", err))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to parse json of request: %w", err))
 	}
 
 	return &dogu, nil
@@ -271,7 +274,7 @@ func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte,
 
 	request, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to prepare request: %w", err))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to prepare request: %w", err))
 	}
 
 	if r.credentials != nil {
@@ -280,7 +283,7 @@ func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte,
 
 	resp, err := r.httpClient.Do(request)
 	if err != nil {
-		return nil, clienterrors.NewConnectionError(fmt.Errorf("failed to request remote registry: %w", err))
+		return nil, doguregistry.NewConnectionError(fmt.Errorf("failed to request remote registry: %w", err))
 	}
 
 	defer func() {
@@ -300,7 +303,7 @@ func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte,
 	const maxBodySize = 1 << 23 // 8MB
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
 	if err != nil {
-		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to read response body: %w", err))
+		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to read response body: %w", err))
 	}
 	return body, nil
 }
@@ -309,18 +312,18 @@ func checkStatusCode(response *http.Response) error {
 	sc := response.StatusCode
 	switch sc {
 	case http.StatusUnauthorized:
-		return clienterrors.NewUnauthorizedError(errors.New("401 unauthorized, please login to proceed"))
+		return doguregistry.NewUnauthorizedError(errors.New("401 unauthorized, please login to proceed"))
 	case http.StatusForbidden:
-		return clienterrors.NewForbiddenError(errors.New("403 forbidden, not enough privileges"))
+		return doguregistry.NewForbiddenError(errors.New("403 forbidden, not enough privileges"))
 	case http.StatusNotFound:
-		return clienterrors.NewNotFoundError(errors.New("404 not found"))
+		return doguregistry.NewNotFoundError(errors.New("404 not found"))
 	case http.StatusInternalServerError:
-		return clienterrors.NewConnectionError(errors.New("500 internal server error"))
+		return doguregistry.NewConnectionError(errors.New("500 internal server error"))
 	default:
 		if sc >= http.StatusBadRequest {
 			furtherExplanation := extractRemoteBody(response.Body, sc)
 
-			return clienterrors.NewGenericError(fmt.Errorf("remote registry returns invalid status: %s: %s", response.Status, furtherExplanation))
+			return doguregistry.NewGenericError(fmt.Errorf("remote registry returns invalid status: %s: %s", response.Status, furtherExplanation))
 		}
 
 		return nil
