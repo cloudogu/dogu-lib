@@ -32,7 +32,7 @@ func TestLoggingRoundTripper_LogsRequestData(t *testing.T) {
 	// 3. Initialize your exact LoggingRoundTripper injecting the mock transport
 	client := &http.Client{
 		Transport: &LoggingRoundTripper{
-			Proxied: http.DefaultTransport,
+			originalTransport: http.DefaultTransport,
 		},
 	}
 
@@ -86,7 +86,7 @@ func TestLoggingRoundTripper_LogsErrorOnFailure(t *testing.T) {
 	// 2. Initialize your exact LoggingRoundTripper
 	client := &http.Client{
 		Transport: &LoggingRoundTripper{
-			Proxied: http.DefaultTransport,
+			originalTransport: http.DefaultTransport,
 		},
 	}
 
@@ -152,7 +152,7 @@ func TestLoggingRoundTripper_LogsErrorOnEmptyTransport(t *testing.T) {
 	// 2. Initialize your exact LoggingRoundTripper
 	client := &http.Client{
 		Transport: &LoggingRoundTripper{
-			Proxied: nil,
+			originalTransport: nil,
 		},
 	}
 
@@ -186,7 +186,7 @@ func TestLoggingRoundTripper_LogsErrorOnEmptyTransport(t *testing.T) {
 
 	// Verify that the log captured the standard context cancellation text
 
-	expectedErrorString := "DCC Http Client Request failed"
+	expectedErrorString := "Ensure there is an original Transport"
 	assert.Contains(t, logOutput, expectedErrorString)
 
 }

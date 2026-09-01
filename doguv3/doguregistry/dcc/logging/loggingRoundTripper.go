@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -8,20 +9,27 @@ import (
 
 // LoggingRoundTripper intercepts HTTP requests to log metrics
 type LoggingRoundTripper struct {
-	Proxied http.RoundTripper
+	originalTransport http.RoundTripper
+}
+
+func NewLoggingRoundTripper(transport http.RoundTripper) *LoggingRoundTripper {
+	return &LoggingRoundTripper{
+		originalTransport: transport,
+	}
 }
 
 func (l *LoggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	startTime := time.Now()
 
 	// Ensure there is a proxied transport; fall back to the default transport when nil
-	proxied := l.Proxied
-	if proxied == nil {
-		proxied = http.DefaultTransport
+	originalTransport := l.originalTransport
+	if originalTransport == nil {
+		slog.Error("Ensure there is an original Transport")
+		return nil, fmt.Errorf("original transport is not provided to LoggingRoundTripper")
 	}
 
 	// Execute the actual HTTP request
-	resp, err := proxied.RoundTrip(req)
+	resp, err := originalTransport.RoundTrip(req)
 
 	duration := time.Since(startTime)
 

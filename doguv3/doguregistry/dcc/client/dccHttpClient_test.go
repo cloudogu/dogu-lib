@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
+	"github.com/cloudogu/dogu-lib/doguv3/doguregistry"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/config"
-	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -90,7 +90,7 @@ func Test_New_fails_for_wrong_url(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	assert.True(t, errors.IsGenericError(err))
+	assert.True(t, doguregistry.IsGenericError(err))
 	assert.Contains(t, err.Error(), "failed to parse endpoint url")
 }
 
@@ -174,7 +174,7 @@ func Test_checkStatusCode(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.True(t, errors.IsUnauthorizedError(err))
+		assert.True(t, doguregistry.IsUnauthorizedError(err))
 	})
 
 	t.Run("should return custom error for HTTP 403", func(t *testing.T) {
@@ -188,7 +188,7 @@ func Test_checkStatusCode(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.True(t, errors.IsForbiddenError(err))
+		assert.True(t, doguregistry.IsForbiddenError(err))
 	})
 
 	t.Run("should return custom error for HTTP 404", func(t *testing.T) {
@@ -202,7 +202,7 @@ func Test_checkStatusCode(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.True(t, errors.IsNotFoundError(err))
+		assert.True(t, doguregistry.IsNotFoundError(err))
 	})
 }
 
@@ -297,7 +297,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualDogu)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "namespace of the dogu is not valid")
 	})
 
@@ -313,7 +313,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualDogu)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "name of the dogu is not valid")
 	})
 
@@ -334,7 +334,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualDogu)
-		assert.True(t, errors.IsNotFoundError(err))
+		assert.True(t, doguregistry.IsNotFoundError(err))
 	})
 
 	t.Run("should return generic error when parsing response json fails", func(t *testing.T) {
@@ -356,7 +356,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, response)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "failed to parse json of request")
 	})
 }
@@ -484,7 +484,7 @@ func Test_httpRemote_Get(t *testing.T) {
 				// then
 				require.Error(t, err)
 				assert.Nil(t, actualDogu)
-				assert.True(t, errors.IsGenericError(err))
+				assert.True(t, doguregistry.IsGenericError(err))
 				assert.Contains(t, err.Error(), "dogu identifier is not valid")
 
 			})
@@ -508,7 +508,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualDogu)
-		assert.True(t, errors.IsNotFoundError(err))
+		assert.True(t, doguregistry.IsNotFoundError(err))
 	})
 
 	t.Run("should return generic error when parsing response json fails", func(t *testing.T) {
@@ -530,7 +530,7 @@ func Test_httpRemote_Get(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, response)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "failed to parse json of request")
 	})
 }
@@ -580,7 +580,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualVersions)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "namespace of the dogu is not valid")
 	})
 
@@ -596,7 +596,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualVersions)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "name of the dogu is not valid")
 	})
 
@@ -617,7 +617,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, versions)
-		assert.True(t, errors.IsNotFoundError(err))
+		assert.True(t, doguregistry.IsNotFoundError(err))
 	})
 
 	t.Run("should return generic error when parsing response json fails", func(t *testing.T) {
@@ -639,7 +639,7 @@ func Test_httpRemote_GetVersions(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, response)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "failed to parse response json of request")
 	})
 }
@@ -740,7 +740,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualDoguIdentifiers)
-		assert.True(t, errors.IsUnauthorizedError(err))
+		assert.True(t, doguregistry.IsUnauthorizedError(err))
 	})
 
 	t.Run("should return internal server error when remote returns 500", func(t *testing.T) {
@@ -760,7 +760,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, actualDogu)
-		assert.True(t, errors.IsConnectionError(err))
+		assert.True(t, doguregistry.IsConnectionError(err))
 	})
 
 	t.Run("should return generic error when parsing response json fails", func(t *testing.T) {
@@ -782,7 +782,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, response)
-		assert.True(t, errors.IsGenericError(err))
+		assert.True(t, doguregistry.IsGenericError(err))
 		assert.Contains(t, err.Error(), "failed to parse response json of request")
 	})
 
@@ -799,7 +799,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, response)
-		assert.True(t, errors.IsConnectionError(err))
+		assert.True(t, doguregistry.IsConnectionError(err))
 		assert.Contains(t, err.Error(), "failed to request remote registry")
 	})
 
@@ -816,7 +816,7 @@ func Test_httpRemote_GetAll(t *testing.T) {
 		// then
 		require.Error(t, err)
 		assert.Nil(t, response)
-		assert.True(t, errors.IsConnectionError(err))
+		assert.True(t, doguregistry.IsConnectionError(err))
 		assert.Contains(t, err.Error(), "failed to request remote registry")
 	})
 

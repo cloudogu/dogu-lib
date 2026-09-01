@@ -15,15 +15,21 @@ import (
 	"time"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
+	clienterrors "github.com/cloudogu/dogu-lib/doguv3/doguregistry"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/config"
-	clienterrors "github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/errors"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/logging"
 	"github.com/maypok86/otter/v2"
 	"github.com/maypok86/otter/v2/stats"
 )
 
-// dccHttpClient is able to handle request to a remote DCC registry.
-type dccHttpClient struct {
+const (
+	defaultCacheMaximumDogus  = 100
+	defaultTimeoutSeconds     = 10
+	defaultCacheExpirySeconds = 300
+)
+
+// DccHttpClient is able to handle request to a remote DCC registry.
+type DccHttpClient struct {
 	baseURL     *url.URL
 	credentials *config.Credentials
 	httpClient  *http.Client
@@ -31,7 +37,7 @@ type dccHttpClient struct {
 	cache       *otter.Cache[string, *doguv3.Dogu]
 }
 
-func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials) (*dccHttpClient, error) {
+func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials) (*DccHttpClient, error) {
 	if doguRegistryConfiguration == nil {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu registry configuration must not be nil"))
 	}
@@ -50,7 +56,7 @@ func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credential
 		return nil, clienterrors.NewGenericError(fmt.Errorf("failed to parse endpoint url %s: %w", endpoint, err))
 	}
 
-	dccHttpClient := &dccHttpClient{
+	dccHttpClient := &DccHttpClient{
 		baseURL:     baseURL,
 		credentials: credentials,
 		httpClient:  httpClient,
@@ -66,21 +72,22 @@ func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credential
 
 func setDefaults(doguRegistryConfiguration *config.DoguRegistryConfiguration) {
 	// Apply defaults when not provided by caller
+
 	if doguRegistryConfiguration.Timeout == 0 {
-		doguRegistryConfiguration.Timeout = 10
+		doguRegistryConfiguration.Timeout = defaultTimeoutSeconds
 	}
 
 	if !doguRegistryConfiguration.DisableCache {
 		if doguRegistryConfiguration.CacheExpirySeconds == 0 {
-			doguRegistryConfiguration.CacheExpirySeconds = 300
+			doguRegistryConfiguration.CacheExpirySeconds = defaultCacheExpirySeconds
 		}
 		if doguRegistryConfiguration.CacheMaximumDogus == 0 {
-			doguRegistryConfiguration.CacheMaximumDogus = 100
+			doguRegistryConfiguration.CacheMaximumDogus = defaultCacheMaximumDogus
 		}
 	}
 }
 
-func initializeCache(doguRegistryConfiguration *config.DoguRegistryConfiguration, doguRegistryClient *dccHttpClient) error {
+func initializeCache(doguRegistryConfiguration *config.DoguRegistryConfiguration, doguRegistryClient *DccHttpClient) error {
 	if !doguRegistryConfiguration.DisableCache {
 		cache, err := otter.New(&otter.Options[string, *doguv3.Dogu]{
 			MaximumSize: doguRegistryConfiguration.CacheMaximumDogus,
@@ -105,10 +112,8 @@ func createHTTPClient(config *config.DoguRegistryConfiguration) (*http.Client, e
 	}
 
 	httpClient := &http.Client{
-		Timeout: time.Duration(config.Timeout) * time.Second,
-		Transport: &logging.LoggingRoundTripper{
-			Proxied: transport,
-		},
+		Timeout:   time.Duration(config.Timeout) * time.Second,
+		Transport: logging.NewLoggingRoundTripper(transport),
 	}
 	return httpClient, nil
 }
@@ -144,7 +149,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 }
 
 // GetLatest returns the detail about the latest dogu from the remote server by name.
-func (r *dccHttpClient) GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
+func (r *DccHttpClient) GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
 	if !doguv3.IsValidNamespace(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -162,7 +167,7 @@ func (r *dccHttpClient) GetLatest(ctx context.Context, doguNamespace string, nam
 }
 
 // Get returns a version specific detail about the dogu.
-func (r *dccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
+func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error) {
 	if !doguIdentifier.IsValid() {
 		return nil, clienterrors.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
 	}
@@ -175,7 +180,7 @@ func (r *dccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 }
 
 // GetVersions returns a version specific dogu descriptor.
-func (r *dccHttpClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
+func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
 	if !doguv3.IsValidNamespace(doguNamespace) {
 		return nil, clienterrors.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -207,7 +212,7 @@ func (r *dccHttpClient) GetVersions(ctx context.Context, doguNamespace string, n
 }
 
 // GetAll returns latest doguv3 identifiers of all dogus in the remote server.
-func (r *dccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error) {
+func (r *DccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error) {
 	body, err := r.request(ctx, r.baseURL.String())
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote: ", "error", err)
@@ -224,7 +229,7 @@ func (r *dccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error)
 
 }
 
-func (r *dccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
+func (r *DccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
 	if !r.config.DisableCache {
 		var remoteDogu, doguFound = r.cache.GetIfPresent(identifier.String())
 		if doguFound {
@@ -246,7 +251,7 @@ func (r *dccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl str
 	return remoteDogu, nil
 }
 
-func (r *dccHttpClient) requestDogu(ctx context.Context, requestURL string) (*doguv3.Dogu, error) {
+func (r *DccHttpClient) requestDogu(ctx context.Context, requestURL string) (*doguv3.Dogu, error) {
 
 	body, err := r.request(ctx, requestURL)
 	if err != nil {
@@ -261,7 +266,7 @@ func (r *dccHttpClient) requestDogu(ctx context.Context, requestURL string) (*do
 	return &dogu, nil
 }
 
-func (r *dccHttpClient) request(ctx context.Context, requestURL string) ([]byte, error) {
+func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte, error) {
 	slog.Debug("fetch json from remote ", "URL", requestURL)
 
 	request, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
