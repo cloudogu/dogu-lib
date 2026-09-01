@@ -123,25 +123,29 @@ func createHTTPClient(doguRegistryConfiguration *config.DoguRegistryConfiguratio
 }
 
 func createProxyHTTPTransport(doguRegistryConfiguration *config.DoguRegistryConfiguration) (*http.Transport, error) {
-	defaultTransport := http.DefaultTransport.(*http.Transport)
-	transport := defaultTransport.Clone()
+	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); !ok || defaultTransport == nil {
+		return nil, fmt.Errorf("http.DefaultTransport is not of type *http.Transport")
+	} else {
+		transport := defaultTransport.Clone()
 
-	if doguRegistryConfiguration.ProxySettings.Enabled {
-		proxyURLString := doguRegistryConfiguration.ProxySettings.CreateURL()
-		slog.Info("configure http client to use proxy", "proxyURL", proxyURLString)
+		if doguRegistryConfiguration.ProxySettings.Enabled {
+			proxyURLString := doguRegistryConfiguration.ProxySettings.CreateURL()
+			slog.Info("configure http client to use proxy", "proxyURL", proxyURLString)
 
-		proxyURL, err := url.Parse(proxyURLString)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse proxy url %s: %w", proxyURLString, err)
+			proxyURL, err := url.Parse(proxyURLString)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse proxy url %s: %w", proxyURLString, err)
+			}
+			transport.Proxy = http.ProxyURL(proxyURL)
+			appendProxyAuthorizationIfRequired(transport, &doguRegistryConfiguration.ProxySettings)
 		}
-		transport.Proxy = http.ProxyURL(proxyURL)
-		appendProxyAuthorizationIfRequired(transport, &doguRegistryConfiguration.ProxySettings)
+		if transport.TLSClientConfig == nil {
+			transport.TLSClientConfig = &tls.Config{}
+		}
+		transport.TLSClientConfig.InsecureSkipVerify = doguRegistryConfiguration.InsecureSkipVerify
+		return transport, nil
 	}
-	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{}
-	}
-	transport.TLSClientConfig.InsecureSkipVerify = doguRegistryConfiguration.InsecureSkipVerify
-	return transport, nil
+
 }
 
 func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings *config.ProxySettings) {
