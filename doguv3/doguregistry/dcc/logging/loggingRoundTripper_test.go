@@ -31,9 +31,7 @@ func TestLoggingRoundTripper_LogsRequestData(t *testing.T) {
 
 	// 3. Initialize your exact LoggingRoundTripper injecting the mock transport
 	client := &http.Client{
-		Transport: &LoggingRoundTripper{
-			originalTransport: http.DefaultTransport,
-		},
+		Transport: NewLoggingRoundTripper(http.DefaultTransport),
 	}
 
 	// 4. Fire the HTTP request against the mock server
@@ -85,9 +83,7 @@ func TestLoggingRoundTripper_LogsErrorOnFailure(t *testing.T) {
 
 	// 2. Initialize your exact LoggingRoundTripper
 	client := &http.Client{
-		Transport: &LoggingRoundTripper{
-			originalTransport: http.DefaultTransport,
-		},
+		Transport: NewLoggingRoundTripper(http.DefaultTransport),
 	}
 
 	// 3. Create a request with an already canceled context to force a RoundTrip error
