@@ -317,7 +317,7 @@ func checkStatusCode(response *http.Response) error {
 	case http.StatusInternalServerError:
 		return clienterrors.NewConnectionError(errors.New("500 internal server error"))
 	default:
-		if sc >= http.StatusMultipleChoices {
+		if sc >= http.StatusBadRequest {
 			furtherExplanation := extractRemoteBody(response.Body, sc)
 
 			return clienterrors.NewGenericError(fmt.Errorf("remote registry returns invalid status: %s: %s", response.Status, furtherExplanation))

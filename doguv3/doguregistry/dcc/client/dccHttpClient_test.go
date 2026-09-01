@@ -133,10 +133,10 @@ func Test_checkStatusCode(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("should return error for HTTP statuses >= 300", func(t *testing.T) {
+	t.Run("should return error for HTTP statuses >= 400", func(t *testing.T) {
 		mockResp := &http.Response{}
-		mockResp.Status = "300 Whoopsie!"
-		mockResp.StatusCode = 300
+		mockResp.Status = "405 Whoopsie!"
+		mockResp.StatusCode = 405
 		mockResp.Body = io.NopCloser(strings.NewReader(`{"status": "I, uh, well... phew!"}`))
 
 		// when
@@ -144,7 +144,7 @@ func Test_checkStatusCode(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.Equal(t, err.Error(), "remote registry returns invalid status: 300 Whoopsie!: I, uh, well... phew!: (no error)")
+		assert.Equal(t, "remote registry returns invalid status: 405 Whoopsie!: I, uh, well... phew!: (no error)", err.Error())
 	})
 
 	t.Run("should return error for HTTP 400", func(t *testing.T) {
