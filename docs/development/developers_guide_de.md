@@ -1,10 +1,10 @@
-Entwicklerhandbuch — DCC-Client (Deutsch)
+# Entwicklerhandbuch — DCC-Client (Deutsch)
 
-Übersicht
+## Übersicht
 
 Dieses Handbuch beschreibt die Nutzung und Erweiterung des DCC-HTTP-Clients (doguv3/dcc). Es behandelt das DccClient-Interface, Konfigurationsoptionen, Fehlerbehandlung über clienterrors sowie Empfehlungen für Integration und Tests.
 
-Komponenten
+## Komponenten
 
 - DccClient (Interface)
   - GetLatest(ctx, namespace, name) -> *doguv3.Dogu
@@ -13,26 +13,26 @@ Komponenten
   - GetAll(ctx) -> []doguv3.Identifier
 
 - Implementierung: httpDccClient
-  - Erzeugung über NewHttpDccClient(config *config.DccClientConfiguration, creds *config.Credentials)
+  - Erzeugung über New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials)
   - Unterstützt Context-Abbruch und Timeouts
   - Optionales Caching (otter)
 
-Konfiguration
+## Konfiguration
 
-DccClientConfiguration (config.DccClientConfiguration):
-- DccApiBaseURL (string) – Basis-URL der entfernten DCC-API. Erforderlich.
+DoguRegistryConfiguration (config.DoguRegistryConfiguration):
+- BaseURL (string) – Basis-URL der entfernten DCC-API. Erforderlich.
 - ProxySettings (struct) – Enabled, Server, Port, Username, Password. Wenn aktiviert, wird ein Proxy in http.Transport konfiguriert.
 - Timeout (int64) – Anforderungs-Timeout in Sekunden (Standard 10s bei 0)
-- UseCache (bool) – Aktiviert In-Memory-Cache
+- DisableCache (bool) – Deaktiviert In-Memory-Cache
 - CacheExpirySeconds (int64) – TTL für Cache-Einträge
 - CacheMaximumDogus (int) – Maximale Einträge im Cache
 
-Credentials
+## Credentials
 
 - Credentials{Username, Password} werden als HTTP Basic Auth gesetzt.
 - Keine Credentials im Quellcode ablegen; lieber Environment-Variablen oder Secret-Manager nutzen.
 
-Fehlerbehandlung (clienterrors)
+## Fehlerbehandlung (clienterrors)
 
 Der Client verwendet typisierte Fehler, damit der Aufrufer gezielt reagieren kann:
 - clienterrors.IsNotFoundError(err) – 404
@@ -55,19 +55,19 @@ Verwende diese Helferfunktionen anstelle von String-Matches. Beispiel:
         }
     }
 
-HTTP & Sicherheit
+## HTTP & Sicherheit
 
 - Context: alle öffentlichen Methoden akzeptieren context.Context; HTTP-Anfragen verwenden NewRequestWithContext.
 - Timeouts: Timeout konfigurierbar; Standard 10s.
 - TLS: TLS-Verhalten wird über die Transport-Einstellungen konfiguriert. Zertifikatsprüfung in Produktion nicht deaktivieren; stattdessen Root-CAs oder Zertifikat-Pinning nutzen.
 - Logging: LoggingRoundTripper entfernt User-Info und Query-Parameter aus der URL; Authorization-Header dürfen nicht geloggt werden.
 
-Performance & Robustheit
+## Performance & Robustheit
 
 - Antwortkörper-Leselimits: Antworten werden auf einen sinnvollen Maximalwert (8MB) begrenzt, um OOM zu vermeiden. Für größere Nutzlasten sollten Streaming/Decoder mit LimitReader verwendet werden.
 - Cache: otter wird mit einem Zugriffsbasierten Ablauf verwendet. Tests sollten keine fragilen Zeit- oder Hit-Zähl-Annahmen treffen; lieber mocken oder Fake-Clock verwenden.
 
-Datentypen — DoguIdentifier und DoguSpec
+## Datentypen — DoguIdentifier und DoguSpec
 
 - DoguIdentifier (doguv3.Identifier)
   - Felder: DoguNamespace (string), Name (string), Version (string).
@@ -151,27 +151,26 @@ Datentypen — DoguIdentifier und DoguSpec
 }
 ```
 
-Testing
+## Testing
 
 - Unit-Tests mit httptest.Server; prüfe Mapping von Statuscodes zu clienterrors.
 - Vermeide time.Sleep; setze kurze TTLs oder nutze Fake-Clock.
 
-Beispiel
+## Beispiel
 
 Client erzeugen und Dogu abrufen:
 
-    cfg := &config.DccClientConfiguration{DccApiBaseURL: "https://dcc.example/api/v3/dogus", Timeout: 15}
+    cfg := &config.DoguRegistryConfiguration{BaseURL: "https://dcc.example/api/v3/dogus", Timeout: 15}
     creds := &config.Credentials{Username: "admin", Password: "secret"}
-    client, err := NewHttpDccClient(cfg, creds)
+    client, err := client.New(cfg, creds)
 
     dogu, err := client.GetLatest(context.Background(), "official", "redmine")
 
 Bei Fehlern nutze clienterrors-Helfer zum Verzweigen.
 
-Konventionen
+## Konventionen
 
 - Keine Credentials ins VCS einchecken.
 - Go vet und staticcheck laufen lassen; neue Features mit Unit-Tests versehen.
 - Sicherheitsrelevante Änderungen (TLS, Auth, Logging) mit kurzer Risikoabschätzung im PR dokumentieren.
 
-Ende des Handbuchs.

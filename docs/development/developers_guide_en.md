@@ -1,10 +1,11 @@
-Developer Guide — DCC client (English)
+# Developer Guide — DCC client (English)
 
-Overview
+## Overview
 
-This guide explains how to use and extend the DCC HTTP client implemented in doguv3/dcc. It covers the DccClient interface, configuration options, error handling via clienterrors, and practical recommendations for integrating and testing the client.
+This guide explains how to use and extend the DCC HTTP client implemented in doguv3/dcc. 
+It covers the DccClient interface, configuration options, error handling via clienterrors, and practical recommendations for integrating and testing the client.
 
-Components
+## Components
 
 - DccClient (interface)
   - GetLatest(ctx, namespace, name) -> *doguv3.Dogu
@@ -13,26 +14,26 @@ Components
   - GetAll(ctx) -> []doguv3.Identifier
 
 - Implementation: httpDccClient
-  - Created via NewHttpDccClient(config *config.DccClientConfiguration, creds *config.Credentials)
+  - Created via New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials)
   - Respects context cancellation and request timeouts
   - Optional local caching (otter)
 
-Configuration
+## Configuration
 
-DccClientConfiguration fields (config.DccClientConfiguration):
-- DccApiBaseURL (string) – base URL of the remote DCC API. Required.
+DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
+- BaseURL (string) – base URL of the remote DCC API. Required.
 - ProxySettings (struct) – Enabled, Server, Port, Username, Password. If Enabled, the client configures an http.Transport proxy. Proxy URL is built with http scheme.
 - Timeout (int64) – request timeout in seconds (default 10s when zero)
-- UseCache (bool) – enable in-memory caching
+- DisableCache (bool) – disable in-memory caching
 - CacheExpirySeconds (int64) – TTL for cache entries
 - CacheMaximumDogus (int) – maximum entries in cache
 
-Credentials
+## Credentials
 
 - Credentials{Username, Password} are applied as HTTP Basic Auth on outgoing GET requests.
 - Never commit credentials in source; pass them securely from environment/secret manager.
 
-Error handling (clienterrors)
+## Error handling (clienterrors)
 
 The client uses typed errors to make handling easier:
 - clienterrors.IsNotFoundError(err) – 404
@@ -55,19 +56,19 @@ These functions rely on errors.As, so prefer to check with them rather than stri
         }
     }
 
-HTTP & Security considerations
+## HTTP & Security considerations
 
 - Context propagation: all public methods accept context.Context and the HTTP requests are created with NewRequestWithContext.
 - Timeouts: configure Timeout in config; default 10s.
 - TLS: the client supports configuring TLS behavior through transport settings. Avoid disabling certificate verification in production; prefer providing a custom root CA or certificate pinning.
 - Logging: LoggingRoundTripper redacts URL user info and query parameters; do not log Authorization headers or secrets.
 
-Performance & Robustness
+## Performance & Robustness
 
 - Response body reads are limited to a sensible maximum (8MB) to avoid OOM. If you expect larger payloads, increase the limit thoughtfully or stream decode via json.Decoder with LimitReader.
 - The cache uses otter with an access-based expiry calculator. Tests should avoid brittle timing assertions; prefer mocking or a test clock.
 
-Data types — DoguIdentifier and DoguSpec
+## Data types — DoguIdentifier and DoguSpec
 
 - DoguIdentifier (doguv3.Identifier)
   - Fields: DoguNamespace (string), Name (string), Version (string).
@@ -150,27 +151,26 @@ Data types — DoguIdentifier and DoguSpec
 }
 ```
 
-Testing
+## Testing
 
 - Unit-test behavior with httptest.Server and assert response handling and error mapping.
 - Avoid time.Sleep in tests; use short TTLs or inject a fake clock.
 
-Examples
+## Examples
 
 Creating a client and fetching a dogu:
 
-    cfg := &config.DccClientConfiguration{DccApiBaseURL: "https://dcc.example/api/v3/dogus", Timeout: 15}
+    cfg := &config.DoguRegistryConfiguration{BaseURL: "https://dcc.example/api/v3/dogus", Timeout: 15}
     creds := &config.Credentials{Username: "admin", Password: "secret"}
-    client, err := NewHttpDccClient(cfg, creds)
+    client, err := client.New(cfg, creds)
 
     dogu, err := client.GetLatest(context.Background(), "official", "redmine")
 
 If err != nil, use clienterrors helpers to branch behavior.
 
-Contacts & Conventions
+## Contacts & Conventions
 
 - Keep configuration and credentials out of source control.
 - Run go vet and staticcheck; add unit tests for new behavior.
 - For security-sensitive changes (TLS, auth, logging), add design notes and a short risk assessment in the PR.
 
-End of guide.
