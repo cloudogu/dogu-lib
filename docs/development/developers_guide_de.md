@@ -26,6 +26,7 @@ DoguRegistryConfiguration (config.DoguRegistryConfiguration):
 - DisableCache (bool) – Deaktiviert In-Memory-Cache
 - CacheExpirySeconds (int64) – TTL für Cache-Einträge
 - CacheMaximumDogus (int) – Maximale Einträge im Cache
+- UserAgent (String) - Wert, der im User-Agent-Header gesendet wird. (z.B.  dogu-operator)
 
 ## Credentials
 

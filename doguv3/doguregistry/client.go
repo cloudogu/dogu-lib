@@ -15,7 +15,7 @@ type Client interface {
 	// Generic error if there is any issue
 	Get(ctx context.Context, doguIdentifier doguv3.Identifier) (*doguv3.Dogu, error)
 
-	// GetVersions returns a version specific dogu descriptor.
+	// GetVersions returns the available versions for a dogu.
 	// Generic error if there is any issue
 	GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error)
 

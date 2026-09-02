@@ -114,7 +114,6 @@ func createHTTPClient(doguRegistryConfiguration *config.DoguRegistryConfiguratio
 		slog.Error("Error creating Proxy HttpTransport for DCC Client", "error", err)
 		return nil, err
 	}
-
 	httpClient := &http.Client{
 		Timeout:   time.Duration(doguRegistryConfiguration.Timeout) * time.Second,
 		Transport: logging.NewLoggingRoundTripper(transport),
@@ -187,7 +186,7 @@ func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 	return r.requestDoguWithCache(ctx, requestUrl, doguIdentifier)
 }
 
-// GetVersions returns a version specific dogu descriptor.
+// GetVersions returns the available versions for a dogu.
 func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
 	err := r.validateNamespaceAndName(doguNamespace, name)
 	if err != nil {
@@ -292,6 +291,12 @@ func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte,
 
 	if r.credentials != nil {
 		request.SetBasicAuth(r.credentials.Username, r.credentials.Password)
+	}
+
+	// Set your common headers
+	request.Header.Add("Accept", "application/json")
+	if r.doguRegistryConfiguration.UserAgent != "" {
+		request.Header.Add("User-Agent", r.doguRegistryConfiguration.UserAgent)
 	}
 
 	resp, err := r.httpClient.Do(request)

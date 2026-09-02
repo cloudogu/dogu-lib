@@ -314,7 +314,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		remoteConfig := &config.DoguRegistryConfiguration{BaseURL: ts.URL}
+		remoteConfig := &config.DoguRegistryConfiguration{BaseURL: ts.URL, UserAgent: "dogu-operator"}
 		dccClient, err := New(remoteConfig, nil)
 		require.NoError(t, err)
 

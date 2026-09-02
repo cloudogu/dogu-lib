@@ -27,6 +27,7 @@ DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
 - DisableCache (bool) – disable in-memory caching
 - CacheExpirySeconds (int64) – TTL for cache entries
 - CacheMaximumDogus (int) – maximum entries in cache
+- UserAgent (string) – value to be used for User-Agent header (ex: dogu-operator)
 
 ## Credentials
 
