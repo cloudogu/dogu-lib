@@ -2,7 +2,8 @@
 
 ## Übersicht
 
-Dieses Handbuch beschreibt die Nutzung und Erweiterung des DCC-HTTP-Clients (doguv3/dcc). Es behandelt das DccClient-Interface, Konfigurationsoptionen, Fehlerbehandlung über clienterrors sowie Empfehlungen für Integration und Tests.
+Dieses Handbuch beschreibt die Nutzung und Erweiterung des DCC HTTP clients (doguv3/doguregistry). 
+Es behandelt das Client-Interface, Konfigurationsoptionen, Fehlerbehandlung sowie Empfehlungen für Integration und Tests.
 
 ## Komponenten
 
@@ -12,10 +13,14 @@ Dieses Handbuch beschreibt die Nutzung und Erweiterung des DCC-HTTP-Clients (dog
   - GetVersions(ctx, namespace, name) -> []string
   - GetAll(ctx) -> []doguv3.Identifier
 
-- Implementierung: httpDccClient
+- Implementierung: DccHttpClient
   - Erzeugung über New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials)
   - Unterstützt Context-Abbruch und Timeouts
   - Optionales Caching (otter)
+  - Header-Felder (User-Agent, Authorization)
+  - Query-Parameter werden aus Logs entfernt
+  - TLS-Verhalten (TLS-Config)
+  - Logging (RoundTripper)
 
 ## Konfiguration
 
@@ -26,6 +31,7 @@ DoguRegistryConfiguration (config.DoguRegistryConfiguration):
 - DisableCache (bool) – Deaktiviert In-Memory-Cache
 - CacheExpirySeconds (int64) – TTL für Cache-Einträge
 - CacheMaximumDogus (int) – Maximale Einträge im Cache
+- InsecureSkipVerify (bool) – TLS-Zertifikatsprüfung deaktivieren
 - UserAgent (String) - Wert, der im User-Agent-Header gesendet wird. (z.B.  dogu-operator)
 
 ## Credentials
@@ -167,7 +173,7 @@ Client erzeugen und Dogu abrufen:
 
     dogu, err := client.GetLatest(context.Background(), "official", "redmine")
 
-Bei Fehlern nutze clienterrors-Helfer zum Verzweigen.
+Bei Fehlern nutze errors-Helfer zum Verzweigen. (z.B. clienterrors.IsNotFoundError(err))
 
 ## Konventionen
 

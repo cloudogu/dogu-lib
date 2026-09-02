@@ -2,21 +2,25 @@
 
 ## Overview
 
-This guide explains how to use and extend the DCC HTTP client implemented in doguv3/dcc. 
-It covers the DccClient interface, configuration options, error handling via clienterrors, and practical recommendations for integrating and testing the client.
+This guide explains how to use and extend the DCC HTTP client implemented in doguv3/doguregistry. 
+It covers the Client interface, configuration options, error handling, and practical recommendations for integrating and testing the client.
 
 ## Components
 
-- DccClient (interface)
+- Client (interface)
   - GetLatest(ctx, namespace, name) -> *doguv3.Dogu
   - Get(ctx, identifier) -> *doguv3.Dogu
   - GetVersions(ctx, namespace, name) -> []string
   - GetAll(ctx) -> []doguv3.Identifier
 
-- Implementation: httpDccClient
+- Implementation: DccHttpClient
   - Created via New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credentials *config.Credentials)
   - Respects context cancellation and request timeouts
   - Optional local caching (otter)
+  - Header-Fields (User-Agent, Authorization) 
+  - Query Parameters are not part of the logs
+  - TLS configuration
+  - Logging
 
 ## Configuration
 
@@ -27,6 +31,7 @@ DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
 - DisableCache (bool) – disable in-memory caching
 - CacheExpirySeconds (int64) – TTL for cache entries
 - CacheMaximumDogus (int) – maximum entries in cache
+- InsecureSkipVerify (bool) – skip TLS certificate verification
 - UserAgent (string) – value to be used for User-Agent header (ex: dogu-operator)
 
 ## Credentials
@@ -167,7 +172,7 @@ Creating a client and fetching a dogu:
 
     dogu, err := client.GetLatest(context.Background(), "official", "redmine")
 
-If err != nil, use clienterrors helpers to branch behavior.
+If err != nil, use error helpers to branch behavior. (ex: clienterrors.IsNotFoundError(err))
 
 ## Contacts & Conventions
 
