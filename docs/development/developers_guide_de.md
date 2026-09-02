@@ -23,8 +23,8 @@ Es behandelt das Client-Interface, Konfigurationsoptionen, Fehlerbehandlung sowi
   - Logging (RoundTripper)
 
 ## Anwendungsfälle und Konfiguration
-    ![](img/Dogu-Registry-Client-Usecases.png)
-    ![](img/Passing-Configurations.png)
+    ![](img/dogu-registry-client-usecases.png)
+    ![](img/passing-configurations.png)
   
 ## Konfiguration
 
