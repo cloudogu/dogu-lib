@@ -292,8 +292,9 @@ func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte,
 		request.SetBasicAuth(r.credentials.Username, r.credentials.Password)
 	}
 
-	// Set your common headers
-	request.Header.Add("Accept", "application/json")
+	// Set common headers
+	request.Header.Set("Accept", "application/json")
+	
 	if r.doguRegistryConfiguration.UserAgent != "" {
 		request.Header.Add("User-Agent", r.doguRegistryConfiguration.UserAgent)
 	}
