@@ -261,7 +261,7 @@ func TestInsecureSkipVerify(t *testing.T) {
 
 	doguNamespace := "official"
 	name := "jenkins"
-	expectedDogu := createTestDoguV3()
+	expectedDogu := CreateTestDoguV3()
 
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, fmt.Sprintf("/%s/%s", doguNamespace, name), r.URL.Path)
@@ -300,7 +300,7 @@ func Test_httpRemote_GetLatest(t *testing.T) {
 	doguNamespace := "official"
 	name := "jenkins"
 
-	expectedDogu := createTestDoguV3()
+	expectedDogu := CreateTestDoguV3()
 
 	t.Run("should successfully get latest dogu", func(t *testing.T) {
 		// given: mock HTTP registry server
@@ -407,7 +407,7 @@ func Test_httpRemote_Get(t *testing.T) {
 	name := "jenkins"
 	version := "0.0.1"
 
-	expectedDogu := createTestDoguV3()
+	expectedDogu := CreateTestDoguV3()
 
 	t.Run("should successfully get dogu version", func(t *testing.T) {
 		// given: mock HTTP registry server
@@ -927,7 +927,8 @@ func createTestDoguIdentifer(doguNamespace string, name string, version string) 
 	}
 	return doguIdentifier
 }
-func createTestDoguV3() *doguv3.Dogu {
+
+func CreateTestDoguV3() *doguv3.Dogu {
 	publishedAt, err := time.Parse(time.RFC3339Nano, "2026-05-06T09:57:04.927Z")
 	if err != nil {
 		panic(err)
