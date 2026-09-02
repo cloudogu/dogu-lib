@@ -41,9 +41,9 @@ DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
 
 
 ## Usecases and configuration
-    ![](img/Dogu-Registry-Client-Usecases.png)
-    ![](img/Passing-Configurations.png)
 
+![](img/dogu-registry-client-usecases.png)
+![](img/passing-configurations.png)
 
 ## Error handling (clienterrors)
 
