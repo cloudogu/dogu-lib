@@ -1,35 +1,18 @@
-package doguv3
+package testutil
 
 import (
-	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/cloudogu/dogu-lib/doguv3"
 )
 
-func TestDoguClone(t *testing.T) {
-	originalDogu := CreateTestDoguV3()
-
-	clone := originalDogu.Clone()
-
-	assert.Equal(t, originalDogu, clone)
-}
-
-func TestDoguCloneNil(t *testing.T) {
-	var originalDogu *Dogu
-
-	clone := originalDogu.Clone()
-
-	assert.Equal(t, originalDogu, clone)
-}
-
-func CreateTestDoguV3() *Dogu {
+func CreateTestDoguV3() *doguv3.Dogu {
 	publishedAt, err := time.Parse(time.RFC3339Nano, "2026-05-06T09:57:04.927Z")
 	if err != nil {
 		panic(err)
 	}
 
-	return &Dogu{
+	return &doguv3.Dogu{
 		Name:          "redmine",
 		DoguNamespace: "official",
 		Version:       "0.0.1",
@@ -47,7 +30,7 @@ func CreateTestDoguV3() *Dogu {
 		Logo:  "https://cloudogu.com/images/dogus/redmine.png",
 		URL:   "https://cloudogu.com/ecosystem",
 		Chart: "oci://registry.cloudogu.com/official/dogu/v3/charts/redmine",
-		Applications: []ApplicationVersion{
+		Applications: []doguv3.ApplicationVersion{
 			{
 				Name:    "redmine",
 				Version: "6.1.2",
@@ -68,20 +51,20 @@ func CreateTestDoguV3() *Dogu {
 			"ConfigValidation.dogu-validation.cloudogu.com/v1",
 			"UpgradePath.dogu-migration.cloudogu.com/v1",
 		},
-		ServiceAccounts: ServiceAccounts{
-			Requests: []ServiceAccountRequest{
+		ServiceAccounts: doguv3.ServiceAccounts{
+			Requests: []doguv3.ServiceAccountRequest{
 				{
 					Type:     "nexus",
 					Optional: true,
 				},
 			},
-			Producers: []ServiceAccountProducer{
+			Producers: []doguv3.ServiceAccountProducer{
 				{
 					Type: "redmine",
 				},
 			},
 		},
-		ExposedPorts: []ExposedPort{
+		ExposedPorts: []doguv3.ExposedPort{
 			{
 				Protocol: "tcp",
 				Port:     3000,
@@ -90,7 +73,7 @@ func CreateTestDoguV3() *Dogu {
 		ConfigurableKeys: []string{
 			"logging/root",
 		},
-		Upgrades: []Upgrade{
+		Upgrades: []doguv3.Upgrade{
 			{
 				From:        ">=44.0.0 <45.0.0",
 				To:          "45.7.0",
