@@ -79,6 +79,7 @@ These functions rely on errors.As, so prefer to check with them rather than stri
 
 - Response body reads are limited to a sensible maximum (8MB) to avoid OOM. If you expect larger payloads, increase the limit thoughtfully or stream decode via json.Decoder with LimitReader.
 - The cache uses otter with an access-based expiry calculator. Tests should avoid brittle timing assertions; prefer mocking or a test clock.
+- The method Get(ctx, identifier) gets the data from the cache first, and falls back to the remote registry if not found. While returning, a cloned object is returned to avoid side effects.
 
 ## Data types — DoguIdentifier and DoguSpec
 

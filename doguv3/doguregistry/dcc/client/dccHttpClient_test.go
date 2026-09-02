@@ -493,6 +493,62 @@ func Test_httpRemote_Get(t *testing.T) {
 
 	})
 
+	t.Run("should return a clone version of the dogu version", func(t *testing.T) {
+		// given: mock HTTP registry server
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, fmt.Sprintf("/%s/%s/%s", doguNamespace, name, version), r.URL.Path)
+			assert.Equal(t, http.MethodGet, r.Method)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(expectedDogu)
+		}))
+		defer ts.Close()
+
+		const CACHE_EXPIRY_SECONDS = 1
+		remoteConfig := &config.DoguRegistryConfiguration{BaseURL: ts.URL, DisableCache: false, CacheExpirySeconds: CACHE_EXPIRY_SECONDS}
+		dccClient, err := New(remoteConfig, nil)
+		require.NoError(t, err)
+
+		// when
+		doguIdentifier := doguv3.Identifier{
+			DoguNamespace: doguNamespace,
+			Name:          name,
+			Version:       version,
+		}
+		actualDogu, err := dccClient.Get(context.Background(), doguIdentifier)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, expectedDogu, actualDogu)
+
+		stats := dccClient.cache.Stats()
+		_, isPresent := dccClient.cache.GetIfPresent(doguIdentifier.String())
+		assert.True(t, isPresent)
+		assert.Equal(t, uint64(0), stats.Hits)
+
+		//Should get next time from cache and should be independent of the previous dogu returned
+		actualDogu.Description = "Changed description"
+		actualDogu2, err := dccClient.Get(context.Background(), doguIdentifier)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, expectedDogu, actualDogu2)
+
+		//Should get next time from cache and should be independent of the previous dogus returned
+		actualDogu2.Description = "Changed description 2"
+		actualDogu3, err := dccClient.Get(context.Background(), doguIdentifier)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, expectedDogu, actualDogu3)
+
+		assert.NotEqual(t, actualDogu, actualDogu2)
+		assert.NotEqual(t, actualDogu, actualDogu3)
+		assert.NotEqual(t, actualDogu2, actualDogu3)
+
+	})
+
 	t.Run("should return error for invalid doguidentifier", func(t *testing.T) {
 		// given
 		remoteConfig := &config.DoguRegistryConfiguration{BaseURL: "http://localhost"}

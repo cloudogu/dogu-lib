@@ -249,7 +249,8 @@ func (r *DccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl str
 		var remoteDogu, doguFound = r.cache.GetIfPresent(identifier.String())
 		if doguFound {
 			slog.Debug("dogu found in cache", "dogu", remoteDogu)
-			return remoteDogu, nil
+			clonedDogu := *remoteDogu
+			return &clonedDogu, nil
 		}
 	}
 	remoteDogu, err := r.requestDogu(ctx, requestUrl)
@@ -262,8 +263,8 @@ func (r *DccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl str
 		slog.Debug("saving dogu into the cache", "dogu", remoteDogu)
 		r.cache.Set(identifier.String(), remoteDogu)
 	}
-
-	return remoteDogu, nil
+	clonedDogu := *remoteDogu
+	return &clonedDogu, nil
 }
 
 func (r *DccHttpClient) requestDogu(ctx context.Context, requestURL string) (*doguv3.Dogu, error) {

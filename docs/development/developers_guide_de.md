@@ -78,6 +78,7 @@ Verwende diese Helferfunktionen anstelle von String-Matches. Beispiel:
 
 - Antwortkörper-Leselimits: Antworten werden auf einen sinnvollen Maximalwert (8MB) begrenzt, um OOM zu vermeiden. Für größere Nutzlasten sollten Streaming/Decoder mit LimitReader verwendet werden.
 - Cache: otter wird mit einem Zugriffsbasierten Ablauf verwendet. Tests sollten keine fragilen Zeit- oder Hit-Zähl-Annahmen treffen; lieber mocken oder Fake-Clock verwenden.
+- Die Methode `Get(ctx, identifier)` ruft die Daten zunächst aus dem Cache ab und greift auf die remote registry zurück, falls sie dort nicht gefunden werden. Bei der Rückgabe wird ein geklontes Objekt zurückgegeben, um Nebenwirkungen zu vermeiden.
 
 ## Datentypen — DoguIdentifier und DoguSpec
 
