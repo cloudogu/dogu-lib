@@ -162,13 +162,9 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 
 // GetLatest returns the detail about the latest dogu from the remote server by name.
 func (r *DccHttpClient) GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
-	if !doguv3.IsValidNamespace(doguNamespace) {
-		return nil, doguregistry.NewGenericError(
-			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
-	}
-	if !doguv3.IsValidName(name) {
-		return nil, doguregistry.NewGenericError(
-			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
+	err := r.validateNamespaceAndName(doguNamespace, name)
+	if err != nil {
+		return nil, err
 	}
 
 	requestUrl := r.baseURL.ResolveReference(
@@ -193,13 +189,9 @@ func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 
 // GetVersions returns a version specific dogu descriptor.
 func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
-	if !doguv3.IsValidNamespace(doguNamespace) {
-		return nil, doguregistry.NewGenericError(
-			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
-	}
-	if !doguv3.IsValidName(name) {
-		return nil, doguregistry.NewGenericError(
-			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
+	err := r.validateNamespaceAndName(doguNamespace, name)
+	if err != nil {
+		return nil, err
 	}
 	versionsPath := "_versions"
 	requestURL := r.baseURL.ResolveReference(
@@ -239,6 +231,18 @@ func (r *DccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error)
 
 	return dogiIdentifiers, nil
 
+}
+
+func (r *DccHttpClient) validateNamespaceAndName(doguNamespace string, name string) error {
+	if !doguv3.IsValidNamespace(doguNamespace) {
+		return doguregistry.NewGenericError(
+			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
+	}
+	if !doguv3.IsValidName(name) {
+		return doguregistry.NewGenericError(
+			fmt.Errorf("name of the dogu is not valid (name: %s)", name))
+	}
+	return nil
 }
 
 func (r *DccHttpClient) requestDoguWithCache(ctx context.Context, requestUrl string, identifier doguv3.Identifier) (*doguv3.Dogu, error) {
