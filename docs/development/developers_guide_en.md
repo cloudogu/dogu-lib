@@ -39,6 +39,12 @@ DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
 - Credentials{Username, Password} are applied as HTTP Basic Auth on outgoing GET requests.
 - Never commit credentials in source; pass them securely from environment/secret manager.
 
+
+## Usecases and configuration
+    ![](img/Dogu-Registry-Client-Usecases.png)
+    ![](img/Passing-Configurations.png)
+
+
 ## Error handling (clienterrors)
 
 The client uses typed errors to make handling easier:

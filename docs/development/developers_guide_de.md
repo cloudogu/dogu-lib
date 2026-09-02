@@ -22,6 +22,10 @@ Es behandelt das Client-Interface, Konfigurationsoptionen, Fehlerbehandlung sowi
   - TLS-Verhalten (TLS-Config)
   - Logging (RoundTripper)
 
+## Anwendungsfälle und Konfiguration
+    ![](img/Dogu-Registry-Client-Usecases.png)
+    ![](img/Passing-Configurations.png)
+  
 ## Konfiguration
 
 DoguRegistryConfiguration (config.DoguRegistryConfiguration):
