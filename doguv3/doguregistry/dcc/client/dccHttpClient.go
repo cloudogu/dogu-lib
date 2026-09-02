@@ -161,7 +161,7 @@ func appendProxyAuthorizationIfRequired(transport *http.Transport, proxySettings
 
 // GetLatest returns the detail about the latest dogu from the remote server by name.
 func (r *DccHttpClient) GetLatest(ctx context.Context, doguNamespace string, name string) (*doguv3.Dogu, error) {
-	err := r.validateNamespaceAndName(doguNamespace, name)
+	err := validateNamespaceAndName(doguNamespace, name)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 
 // GetVersions returns the available versions for a dogu.
 func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, name string) ([]string, error) {
-	err := r.validateNamespaceAndName(doguNamespace, name)
+	err := validateNamespaceAndName(doguNamespace, name)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (r *DccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error)
 
 }
 
-func (r *DccHttpClient) validateNamespaceAndName(doguNamespace string, name string) error {
+func validateNamespaceAndName(doguNamespace string, name string) error {
 	if !doguv3.IsValidNamespace(doguNamespace) {
 		return doguregistry.NewGenericError(
 			fmt.Errorf("namespace of the dogu is not valid (doguNamespace: %s)", doguNamespace))
@@ -294,7 +294,7 @@ func (r *DccHttpClient) request(ctx context.Context, requestURL string) ([]byte,
 
 	// Set common headers
 	request.Header.Set("Accept", "application/json")
-	
+
 	if r.doguRegistryConfiguration.UserAgent != "" {
 		request.Header.Add("User-Agent", r.doguRegistryConfiguration.UserAgent)
 	}
