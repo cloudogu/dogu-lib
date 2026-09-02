@@ -25,25 +25,28 @@ It covers the Client interface, configuration options, error handling, and pract
 ## Configuration
 
 DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
-- BaseURL (string) – base URL of the remote DCC API. Required.
-- ProxySettings (struct) – Enabled, Server, Port, Username, Password. If Enabled, the client configures an http.Transport proxy. Proxy URL is built with http scheme.
-- Timeout (int64) – request timeout in seconds (default 10s when zero)
-- DisableCache (bool) – disable in-memory caching
-- CacheExpirySeconds (int64) – TTL for cache entries
-- CacheMaximumDogus (int) – maximum entries in cache
-- InsecureSkipVerify (bool) – skip TLS certificate verification
-- UserAgent (string) – value to be used for User-Agent header (ex: dogu-operator)
+
+| Name               | Type                  | Required? | Description                                                |
+|--------------------|-----------------------|-----------|------------------------------------------------------------|
+| BaseURL            | string                | Yes       | Base URL of the remote DCC API                             |
+| ProxySettings      | *config.ProxySettings | No        | Proxy settings for the HTTP client                         |
+| Timeout            | int64                 | No        | Request timeout in seconds (default 10s when zero)         |
+| DisableCache       | bool                  | No        | Disable in-memory caching                                  |
+| CacheExpirySeconds | int64                 | No        | TTL for cache entries                                      |
+| CacheMaximumDogus  | int                   | No        | Maximum entries in cache                                   |
+| InsecureSkipVerify | bool                  | No        | Skip TLS certificate verification                          |
+| UserAgent          | string                | No        | Value to be used for User-Agent header (ex: dogu-operator) |
+
 
 ## Credentials
 
 - Credentials{Username, Password} are applied as HTTP Basic Auth on outgoing GET requests.
 - Never commit credentials in source; pass them securely from environment/secret manager.
 
-
-## Usecases and configuration
-
-![](img/dogu-registry-client-usecases.png)
-![](img/passing-configurations.png)
+| Name     | Type   | Required? | Description                                  |
+|----------|--------|-----------|----------------------------------------------|
+| Username | string | Yes       | Username to connect to the dogu registry API |
+| Password | string | Yes       | Password to connect to the dogu registry API |
 
 ## Error handling (clienterrors)
 

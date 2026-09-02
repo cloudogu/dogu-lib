@@ -22,27 +22,35 @@ Es behandelt das Client-Interface, Konfigurationsoptionen, Fehlerbehandlung sowi
   - TLS-Verhalten (TLS-Config)
   - Logging (RoundTripper)
 
-## Anwendungsfälle und Konfiguration
 
-![](img/dogu-registry-client-usecases.png)
-![](img/passing-configurations.png)
 
 ## Konfiguration
 
 DoguRegistryConfiguration (config.DoguRegistryConfiguration):
-- BaseURL (string) – Basis-URL der entfernten DCC-API. Erforderlich.
-- ProxySettings (struct) – Enabled, Server, Port, Username, Password. Wenn aktiviert, wird ein Proxy in http.Transport konfiguriert.
-- Timeout (int64) – Anforderungs-Timeout in Sekunden (Standard 10s bei 0)
-- DisableCache (bool) – Deaktiviert In-Memory-Cache
-- CacheExpirySeconds (int64) – TTL für Cache-Einträge
-- CacheMaximumDogus (int) – Maximale Einträge im Cache
-- InsecureSkipVerify (bool) – TLS-Zertifikatsprüfung deaktivieren
-- UserAgent (String) - Wert, der im User-Agent-Header gesendet wird. (z.B.  dogu-operator)
+
+
+| Name               | Typ                   | Notwendig? | Beschreibung                                                                                              |
+|--------------------|-----------------------|------------|-----------------------------------------------------------------------------------------------------------|
+| BaseURL            | string                | Ja         | Basis-URL der entfernten DCC-API. Erforderlich.                                                           |
+| ProxySettings      | *config.ProxySettings | Nein       | Enabled, Server, Port, Username, Password. Wenn aktiviert, wird ein Proxy in http.Transport konfiguriert. |
+| Timeout            | int64                 | Nein       | Anforderungs-Timeout in Sekunden (Standard 10s bei 0)                                                     |
+| DisableCache       | bool                  | Nein       | Deaktiviert In-Memory-Cache                                                                               |
+| CacheExpirySeconds | int64                 | Nein       | TTL für Cache-Einträge                                                                                    |
+| CacheMaximumDogus  | int                   | Nein       | Maximale Einträge im Cache                                                                                |
+| InsecureSkipVerify | bool                  | Nein       | TLS-Zertifikatsprüfung deaktivieren                                                                       |
+| UserAgent          | string                | Nein       | Wert, der im User-Agent-Header gesendet wird. (z.B.  dogu-operator)                                       |
+
 
 ## Credentials
 
 - Credentials{Username, Password} werden als HTTP Basic Auth gesetzt.
 - Keine Credentials im Quellcode ablegen; lieber Environment-Variablen oder Secret-Manager nutzen.
+
+
+| Name     | Type   | Required? | Description                                           |
+|----------|--------|-----------|-------------------------------------------------------|
+| Username | string | Yes       | Benutzername für die Verbindung zur Dogu-Registry-API |
+| Password | string | Yes       | Passwort für die Verbindung zur Dogu-Registry-API     |
 
 ## Fehlerbehandlung (clienterrors)
 
