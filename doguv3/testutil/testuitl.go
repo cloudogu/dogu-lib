@@ -12,7 +12,7 @@ func CreateTestDoguV3() *doguv3.Dogu {
 		panic(err)
 	}
 
-	return &doguv3.Dogu{
+	testDoguV3 := &doguv3.Dogu{
 		Name:          "redmine",
 		DoguNamespace: "official",
 		Version:       "0.0.1",
@@ -20,65 +20,94 @@ func CreateTestDoguV3() *doguv3.Dogu {
 		PublishedAt:   publishedAt,
 		DisplayName:   "Redmine",
 		Description:   "Project management and issue tracking",
-		Categories:    []string{"Development Apps"},
-		Tags: []string{
-			"pm",
-			"projectmanagement",
-			"issue",
-			"task",
-		},
+
 		Logo:  "https://cloudogu.com/images/dogus/redmine.png",
 		URL:   "https://cloudogu.com/ecosystem",
 		Chart: "oci://registry.cloudogu.com/official/dogu/v3/charts/redmine",
-		Applications: []doguv3.ApplicationVersion{
+	}
+	appendStringArrayParameters(testDoguV3)
+	appendedApplicationVersions(testDoguV3)
+	appendServiceAccounts(testDoguV3)
+	appendExportPorts(testDoguV3)
+	appendUpgrades(testDoguV3)
+
+	return testDoguV3
+}
+
+func appendUpgrades(testDoguV3 *doguv3.Dogu) {
+	testDoguV3.Upgrades = []doguv3.Upgrade{
+		{
+			From:        ">=44.0.0 <45.0.0",
+			To:          "45.7.0",
+			IsMigration: true,
+		},
+	}
+}
+
+func appendExportPorts(testDoguV3 *doguv3.Dogu) {
+
+	testDoguV3.ExposedPorts = []doguv3.ExposedPort{
+		{
+			Protocol: "tcp",
+			Port:     3000,
+		},
+	}
+
+}
+
+func appendServiceAccounts(testDoguV3 *doguv3.Dogu) {
+
+	testDoguV3.ServiceAccounts = doguv3.ServiceAccounts{
+		Requests: []doguv3.ServiceAccountRequest{
 			{
-				Name:    "redmine",
-				Version: "6.1.2",
+				Type:     "nexus",
+				Optional: true,
 			},
+		},
+		Producers: []doguv3.ServiceAccountProducer{
 			{
-				Name:    "postgresql",
-				Version: "16.8",
+				Type: "redmine",
 			},
 		},
-		Images: []string{
-			"registry.cloudogu.com/official/dogu/v3/images/redmine:6.1.2-45.7.0",
-			"docker.io/postgres:16.8",
+	}
+}
+
+func appendedApplicationVersions(testDoguV3 *doguv3.Dogu) {
+	testDoguV3.Applications = []doguv3.ApplicationVersion{
+		{
+			Name:    "redmine",
+			Version: "6.1.2",
 		},
-		DoguApis: []string{
-			"ServiceAccountRequest.k8s.cloudogu.com/v1",
-			"ServiceAccountProducer.k8s.cloudogu.com/v1",
-			"Exposition.k8s.cloudogu.com/v1",
-			"ConfigValidation.dogu-validation.cloudogu.com/v1",
-			"UpgradePath.dogu-migration.cloudogu.com/v1",
+		{
+			Name:    "postgresql",
+			Version: "16.8",
 		},
-		ServiceAccounts: doguv3.ServiceAccounts{
-			Requests: []doguv3.ServiceAccountRequest{
-				{
-					Type:     "nexus",
-					Optional: true,
-				},
-			},
-			Producers: []doguv3.ServiceAccountProducer{
-				{
-					Type: "redmine",
-				},
-			},
-		},
-		ExposedPorts: []doguv3.ExposedPort{
-			{
-				Protocol: "tcp",
-				Port:     3000,
-			},
-		},
-		ConfigurableKeys: []string{
-			"logging/root",
-		},
-		Upgrades: []doguv3.Upgrade{
-			{
-				From:        ">=44.0.0 <45.0.0",
-				To:          "45.7.0",
-				IsMigration: true,
-			},
-		},
+	}
+}
+
+func appendStringArrayParameters(testDoguV3 *doguv3.Dogu) {
+
+	testDoguV3.Categories = []string{"Development Apps"}
+	testDoguV3.Tags = []string{
+		"pm",
+		"projectmanagement",
+		"issue",
+		"task",
+	}
+
+	testDoguV3.Images = []string{
+		"registry.cloudogu.com/official/dogu/v3/images/redmine:6.1.2-45.7.0",
+		"docker.io/postgres:16.8",
+	}
+	testDoguV3.DoguApis = []string{
+		"ServiceAccountRequest.k8s.cloudogu.com/v1",
+		"ServiceAccountProducer.k8s.cloudogu.com/v1",
+		"Exposition.k8s.cloudogu.com/v1",
+		"ConfigValidation.dogu-validation.cloudogu.com/v1",
+		"UpgradePath.dogu-migration.cloudogu.com/v1",
+	}
+
+	testDoguV3.ConfigurableKeys = []string{
+		"logging/root",
 	}
 }
