@@ -39,7 +39,24 @@ DoguRegistryConfiguration (config.DoguRegistryConfiguration):
 | CacheMaximumDogus  | int                   | Nein       | Maximale Einträge im Cache                                                                                |
 | InsecureSkipVerify | bool                  | Nein       | TLS-Zertifikatsprüfung deaktivieren                                                                       |
 | UserAgent          | string                | Nein       | Wert, der im User-Agent-Header gesendet wird. (z.B.  dogu-operator)                                       |
+| URLSchema          | string                | Nein       | `default` (laufende DCC-v3-API) oder `index` (dateibasierter DCC)                                         |
 
+
+### URL-Schemata
+
+Eine laufende DCC-v3-API liefert jede Route als eigene Ressource aus. 
+Ein dateibasierter DCC, der auf einen statischen Webserver gespiegelt wurde, kann das nicht.
+Die Routen für alle Dogus und für ein einzelnes Dogu sind dort Verzeichnisse, und ein Pfad kann nicht gleichzeitig Datei und Verzeichnis sein. 
+Für eine solche Spiegelung wird `URLSchema` auf `index` gesetzt; der Client adressiert dann jeweils eine Datei in diesen Verzeichnissen.
+
+| Client-Aufruf | `default`                             | `index`                                          |
+|---------------|---------------------------------------|--------------------------------------------------|
+| `GetAll`      | `{base}`                              | `{base}/index.json`                              |
+| `GetLatest`   | `{base}/{namespace}/{name}`           | `{base}/{namespace}/{name}/index.json`           |
+| `Get`         | `{base}/{namespace}/{name}/{version}` | `{base}/{namespace}/{name}/{version}/index.json` |
+| `GetVersions` | `{base}/{namespace}/{name}/_versions` | `{base}/{namespace}/{name}/_versions.json`       |
+
+Ein leerer Wert bedeutet `default`; jeder andere Wert lässt `New` fehlschlagen.
 
 ## Credentials
 

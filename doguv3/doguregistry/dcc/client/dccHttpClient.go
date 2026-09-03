@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
@@ -33,7 +32,7 @@ var _ doguregistry.Client = (*DccHttpClient)(nil)
 
 // DccHttpClient is able to handle request to a remote DCC registry.
 type DccHttpClient struct {
-	baseURL                   *url.URL
+	urlSchema                 *urlSchema
 	credentials               *config.Credentials
 	httpClient                *http.Client
 	doguRegistryConfiguration *config.DoguRegistryConfiguration
@@ -60,8 +59,13 @@ func New(doguRegistryConfiguration *config.DoguRegistryConfiguration, credential
 		return nil, doguregistry.NewGenericError(fmt.Errorf("failed to parse endpoint url %s: %w", endpoint, err))
 	}
 
+	schema, err := newURLSchema(baseURL, clonedConfiguration.URLSchema)
+	if err != nil {
+		return nil, err
+	}
+
 	dccHttpClient := &DccHttpClient{
-		baseURL:                   baseURL,
+		urlSchema:                 schema,
 		credentials:               credentials,
 		httpClient:                httpClient,
 		doguRegistryConfiguration: &clonedConfiguration,
@@ -166,11 +170,7 @@ func (r *DccHttpClient) GetLatest(ctx context.Context, doguNamespace string, nam
 		return nil, err
 	}
 
-	requestUrl := r.baseURL.ResolveReference(
-		&url.URL{
-			Path: path.Join(r.baseURL.Path, doguNamespace, name),
-		}).String()
-	return r.requestDogu(ctx, requestUrl)
+	return r.requestDogu(ctx, r.urlSchema.getLatest(doguNamespace, name))
 }
 
 // Get returns a version specific detail about the dogu.
@@ -179,11 +179,7 @@ func (r *DccHttpClient) Get(ctx context.Context, doguIdentifier doguv3.Identifie
 		return nil, doguregistry.NewGenericError(fmt.Errorf("dogu identifier is not valid (doguIdentifier: %s)", doguIdentifier.String()))
 	}
 
-	requestUrl := r.baseURL.ResolveReference(
-		&url.URL{
-			Path: path.Join(r.baseURL.Path, doguIdentifier.DoguNamespace, doguIdentifier.Name, doguIdentifier.Version),
-		}).String()
-	return r.requestDoguWithCache(ctx, requestUrl, doguIdentifier)
+	return r.requestDoguWithCache(ctx, r.urlSchema.get(doguIdentifier), doguIdentifier)
 }
 
 // GetVersions returns the available versions for a dogu.
@@ -192,13 +188,7 @@ func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, n
 	if err != nil {
 		return nil, err
 	}
-	versionsPath := "_versions"
-	requestURL := r.baseURL.ResolveReference(
-		&url.URL{
-			Path: path.Join(r.baseURL.Path, doguNamespace, name, versionsPath),
-		}).String()
-
-	body, err := r.request(ctx, requestURL)
+	body, err := r.request(ctx, r.urlSchema.getVersions(doguNamespace, name))
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote", "error", err)
 		return nil, err
@@ -216,7 +206,7 @@ func (r *DccHttpClient) GetVersions(ctx context.Context, doguNamespace string, n
 
 // GetAll returns latest doguv3 identifiers of all dogus in the remote server.
 func (r *DccHttpClient) GetAll(ctx context.Context) ([]doguv3.Identifier, error) {
-	body, err := r.request(ctx, r.baseURL.String())
+	body, err := r.request(ctx, r.urlSchema.getAll())
 	if err != nil {
 		slog.Error("failed to request dogu identifiers from remote: ", "error", err)
 		return nil, err

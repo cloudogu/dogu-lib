@@ -4,6 +4,15 @@ import (
 	"strconv"
 )
 
+const (
+	// URLSchemaDefault addresses a live DCC-v3 API, where every route is a resource of its own. This is the
+	// default when no schema is configured.
+	URLSchemaDefault = "default"
+	// URLSchemaIndex addresses a file-based DCC, that is a DCC mirrored onto a static webserver. Routes that are
+	// a directory there are answered by a file inside that directory.
+	URLSchemaIndex = "index"
+)
+
 // DoguRegistryConfiguration contains dogu registry configuration details.
 type DoguRegistryConfiguration struct {
 	BaseURL            string
@@ -14,6 +23,7 @@ type DoguRegistryConfiguration struct {
 	CacheMaximumDogus  int
 	InsecureSkipVerify bool
 	UserAgent          string
+	URLSchema          string
 }
 
 // ProxySettings contains the settings for http proxy
