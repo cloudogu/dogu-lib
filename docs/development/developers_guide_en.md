@@ -36,7 +36,24 @@ DoguRegistryConfiguration fields (config.DoguRegistryConfiguration):
 | CacheMaximumDogus  | int                   | No        | Maximum entries in cache                                   |
 | InsecureSkipVerify | bool                  | No        | Skip TLS certificate verification                          |
 | UserAgent          | string                | No        | Value to be used for User-Agent header (ex: dogu-operator) |
+| URLSchema          | string                | No        | `default` (live DCC-v3 API) or `index` (file-based DCC)    |
 
+
+### URL schemas
+
+A live DCC-v3 API serves every route as a resource of its own.
+A file-based DCC, which mirrored onto a static webserver, cannot do that.
+The routes for all dogus and for a single dogu are directories there, and a path cannot be a file and a directory at the same time.
+Set `URLSchema` to `index` for such a mirror, and the client addresses a file in each of those directories instead.
+
+| Client call   | `default`                             | `index`                                          |
+|---------------|---------------------------------------|--------------------------------------------------|
+| `GetAll`      | `{base}`                              | `{base}/index.json`                              |
+| `GetLatest`   | `{base}/{namespace}/{name}`           | `{base}/{namespace}/{name}/index.json`           |
+| `Get`         | `{base}/{namespace}/{name}/{version}` | `{base}/{namespace}/{name}/{version}/index.json` |
+| `GetVersions` | `{base}/{namespace}/{name}/_versions` | `{base}/{namespace}/{name}/_versions.json`       |
+
+An empty value means `default`; any other value makes `New` fail.
 
 ## Credentials
 

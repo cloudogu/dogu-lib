@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 based on the date of the release.
 
 ## [Unreleased]
+### Added
+- [#9] Added the configuration option `URLSchema` to read a file-based DCC. 
 
 ## [v1.1.0] - 2026-09-03
 ### Added
