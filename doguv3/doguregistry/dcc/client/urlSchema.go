@@ -24,19 +24,19 @@ const (
 // directories.
 type urlSchema struct {
 	baseURL *url.URL
-	// indexFile is addressed instead of a route that is a directory in a file-based DCC. It is empty for a live
-	// DCC-v3 API, where those routes are resources of their own.
-	indexFile string
-	// versionsFile holds the version list of a dogu.
-	versionsFile string
+	// indexElement is the path element addressed instead of a route that is a directory in a file-based DCC. It is
+	// empty for a live DCC-v3 API, where those routes are resources of their own.
+	indexElement string
+	// versionsElement is the path element that holds the version list of a dogu.
+	versionsElement string
 }
 
 func newURLSchema(baseURL *url.URL, schemaName string) (*urlSchema, error) {
 	switch schemaName {
 	case "", config.URLSchemaDefault:
-		return &urlSchema{baseURL: baseURL, indexFile: "", versionsFile: defaultVersionsPath}, nil
+		return &urlSchema{baseURL: baseURL, indexElement: "", versionsElement: defaultVersionsPath}, nil
 	case config.URLSchemaIndex:
-		return &urlSchema{baseURL: baseURL, indexFile: defaultIndexFile, versionsFile: defaultVersionsFile}, nil
+		return &urlSchema{baseURL: baseURL, indexElement: defaultIndexFile, versionsElement: defaultVersionsFile}, nil
 	default:
 		return nil, doguregistry.NewGenericError(fmt.Errorf("unknown url schema '%s', expected '%s' or '%s'",
 			schemaName, config.URLSchemaDefault, config.URLSchemaIndex))
@@ -45,22 +45,22 @@ func newURLSchema(baseURL *url.URL, schemaName string) (*urlSchema, error) {
 
 // getAll returns the URL of the list of all dogus.
 func (s *urlSchema) getAll() string {
-	return s.resolve(s.indexFile)
+	return s.resolve(s.indexElement)
 }
 
 // getLatest returns the URL of the latest version of a dogu.
 func (s *urlSchema) getLatest(doguNamespace string, name string) string {
-	return s.resolve(doguNamespace, name, s.indexFile)
+	return s.resolve(doguNamespace, name, s.indexElement)
 }
 
 // get returns the URL of one specific dogu version.
 func (s *urlSchema) get(identifier doguv3.Identifier) string {
-	return s.resolve(identifier.DoguNamespace, identifier.Name, identifier.Version, s.indexFile)
+	return s.resolve(identifier.DoguNamespace, identifier.Name, identifier.Version, s.indexElement)
 }
 
 // getVersions returns the URL of the version list of a dogu.
 func (s *urlSchema) getVersions(doguNamespace string, name string) string {
-	return s.resolve(doguNamespace, name, s.versionsFile)
+	return s.resolve(doguNamespace, name, s.versionsElement)
 }
 
 // resolve appends the given elements to the base URL. Empty elements are dropped, which is how the default schema
