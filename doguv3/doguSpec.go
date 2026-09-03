@@ -187,3 +187,130 @@ type Dogu struct {
 	// of the dogu's Helm chart.
 	Upgrades []Upgrade `json:"Upgrades"`
 }
+
+// Clone returns a deep copy of the Dogu and all nested fields.
+func (d *Dogu) Clone() *Dogu {
+
+	if d == nil {
+		return nil
+	}
+
+	// copy simple properties
+	clone := d.cloneSimpleProperties()
+
+	// copy simple string slices
+	d.cloneStringProperties(clone)
+
+	// copy Applications
+	d.cloneApplications(clone)
+
+	// copy ServiceAccounts
+	d.cloneServiceAccounts(clone)
+
+	// copy ExposedPorts
+	d.cloneExposedPorts(clone)
+
+	// copy Upgrades
+	d.cloneUpgrades(clone)
+
+	return clone
+}
+
+func (d *Dogu) cloneStringProperties(clone *Dogu) {
+	if d.Categories != nil {
+		clone.Categories = make([]string, len(d.Categories))
+		copy(clone.Categories, d.Categories)
+	}
+	if d.Tags != nil {
+		clone.Tags = make([]string, len(d.Tags))
+		copy(clone.Tags, d.Tags)
+	}
+	if d.Images != nil {
+		clone.Images = make([]string, len(d.Images))
+		copy(clone.Images, d.Images)
+	}
+	if d.DoguApis != nil {
+		clone.DoguApis = make([]string, len(d.DoguApis))
+		copy(clone.DoguApis, d.DoguApis)
+	}
+	if d.ConfigurableKeys != nil {
+		clone.ConfigurableKeys = make([]string, len(d.ConfigurableKeys))
+		copy(clone.ConfigurableKeys, d.ConfigurableKeys)
+	}
+}
+
+func (d *Dogu) cloneSimpleProperties() *Dogu {
+	out := &Dogu{
+		DoguNamespace: d.DoguNamespace,
+		Name:          d.Name,
+		Version:       d.Version,
+		AppVersion:    d.AppVersion,
+		PublishedAt:   d.PublishedAt,
+		DisplayName:   d.DisplayName,
+		Description:   d.Description,
+		Logo:          d.Logo,
+		URL:           d.URL,
+		Chart:         d.Chart,
+	}
+	return out
+}
+
+func (d *Dogu) cloneApplications(clone *Dogu) {
+	if d.Applications != nil {
+		clone.Applications = make([]ApplicationVersion, len(d.Applications))
+		for i, applicationVersion := range d.Applications {
+			clone.Applications[i] = ApplicationVersion{
+				Name:    applicationVersion.Name,
+				Version: applicationVersion.Version,
+			}
+		}
+	}
+}
+
+func (d *Dogu) cloneServiceAccounts(clone *Dogu) {
+	if d.ServiceAccounts.Requests != nil || d.ServiceAccounts.Producers != nil {
+		clone.ServiceAccounts = ServiceAccounts{}
+		if d.ServiceAccounts.Requests != nil {
+			clone.ServiceAccounts.Requests = make([]ServiceAccountRequest, len(d.ServiceAccounts.Requests))
+			for i, r := range d.ServiceAccounts.Requests {
+				clone.ServiceAccounts.Requests[i] = ServiceAccountRequest{
+					Type:     r.Type,
+					Optional: r.Optional,
+				}
+			}
+		}
+		if d.ServiceAccounts.Producers != nil {
+			clone.ServiceAccounts.Producers = make([]ServiceAccountProducer, len(d.ServiceAccounts.Producers))
+			for i, p := range d.ServiceAccounts.Producers {
+				clone.ServiceAccounts.Producers[i] = ServiceAccountProducer{
+					Type: p.Type,
+				}
+			}
+		}
+	}
+}
+
+func (d *Dogu) cloneExposedPorts(clone *Dogu) {
+	if d.ExposedPorts != nil {
+		clone.ExposedPorts = make([]ExposedPort, len(d.ExposedPorts))
+		for i, exposedPort := range d.ExposedPorts {
+			clone.ExposedPorts[i] = ExposedPort{
+				Protocol: exposedPort.Protocol,
+				Port:     exposedPort.Port,
+			}
+		}
+	}
+}
+
+func (d *Dogu) cloneUpgrades(clone *Dogu) {
+	if len(d.Upgrades) > 0 {
+		clone.Upgrades = make([]Upgrade, len(d.Upgrades))
+		for i, upgrade := range d.Upgrades {
+			clone.Upgrades[i] = Upgrade{
+				From:        upgrade.From,
+				To:          upgrade.To,
+				IsMigration: upgrade.IsMigration,
+			}
+		}
+	}
+}

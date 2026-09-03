@@ -1,5 +1,6 @@
 # dogu-lib
 A Go library defining a dogu descriptor format to use with v3-Dogus.
+It also has a client to get dogu v3 information from the dogu registry.
 
 ---
 
