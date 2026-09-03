@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/cloudogu/dogu-lib/doguv3"
-	"github.com/cloudogu/dogu-lib/doguv3/testutil"
+	"github.com/cloudogu/dogu-lib/doguv3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 )
 

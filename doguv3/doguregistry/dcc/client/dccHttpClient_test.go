@@ -14,7 +14,7 @@ import (
 	"github.com/cloudogu/dogu-lib/doguv3"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry"
 	"github.com/cloudogu/dogu-lib/doguv3/doguregistry/dcc/config"
-	"github.com/cloudogu/dogu-lib/doguv3/testutil"
+	"github.com/cloudogu/dogu-lib/doguv3/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
